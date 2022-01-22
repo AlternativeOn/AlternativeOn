@@ -1,4 +1,4 @@
-//Version: 0.0.4 (Beta 4)
+//Version: 0.0.5 (Beta 5)
 package main
 
 import (
@@ -54,17 +54,30 @@ type Error struct {
 var mainwin *ui.Window
 
 func init() {
-	zenity.Warning("Este é a beta de um cliente alternativo ao Positivo On, bugs podem ocorrer", zenity.Title("Aviso"), zenity.WarningIcon)
 	//Check on registry if command prompt should be visible
 	k, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.QUERY_VALUE)
 	if err != nil {
-		fmt.Println("[w] Caminho da configuração do registro não encontrado, ignorando...(", err, ")")
+		fmt.Println("[w] Caminho da configuração do registro não encontrado, crindo...")
+		k, _, err = registry.CreateKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, uint32(registry.CURRENT_USER))
+		if err != nil {
+			fmt.Println("[w] Erro ao criar chave no registro:", err, "\nContinuando mesmo assim...")
+		}
+		fmt.Println("[i] Configuração criada com sucesso.")
+		k.Close()
 		return
 	}
 	defer k.Close()
 	val, _, err := k.GetIntegerValue("HideCmd")
 	if err != nil {
-		fmt.Println("[i] O terminal não está configurado para ser ocultado, ignorando...(", err, ")")
+		fmt.Println("[i] O terminal não está configurado para ser ocultado, configurando...")
+		setKey, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.SET_VALUE)
+		if err != nil {
+			fmt.Println("[w] Erro ao criar configuração para o terminal:", err, "\nContinuando mesmo assim...")
+		}
+		err = setKey.SetDWordValue("HideCmd", 1)
+		if err != nil {
+			fmt.Println("[w] Erro ao configurar o terminal:", err, "\nContinuando mesmo assim...")
+		}
 		return
 	}
 	if val == 1 {
@@ -78,6 +91,7 @@ func init() {
 		}
 	}
 	k.Close()
+	zenity.Warning("Este é a beta de um cliente alternativo ao Positivo On, bugs podem ocorrer", zenity.Title("Aviso"), zenity.WarningIcon)
 
 	fmt.Println("[i] Initialization complete")
 }
@@ -86,7 +100,7 @@ func loginPage() ui.Control {
 	//Create a login window on a vertical box
 	vbox := ui.NewVerticalBox()
 	vbox.SetPadded(true)
-	vbox.Append(ui.NewLabel("Para começarmos, faça seu login."), false)
+	vbox.Append(ui.NewLabel("Para começarmos, faça seu login. Use o usuário e senha do Positivo On"), false)
 	vbox.Append(ui.NewVerticalSeparator(), false)
 
 	group := ui.NewGroup("Login")
@@ -114,10 +128,10 @@ func aboutPage() ui.Control {
 	//Create an about window on a vertical box
 	vbox := ui.NewVerticalBox()
 	vbox.SetPadded(true)
-	vbox.Append(ui.NewLabel("Sobre o projeto Alternative On."), false)
+	vbox.Append(ui.NewLabel("Aqui você pode saber sobre o projeto Alternative On."), false)
 	vbox.Append(ui.NewVerticalSeparator(), false)
 
-	group := ui.NewGroup("Sobre")
+	group := ui.NewGroup("Sobre o Alternative On")
 	group.SetMargined(true)
 	vbox.Append(group, true)
 
@@ -166,18 +180,58 @@ func settingsPage() ui.Control {
 	//Create a settings window on a vertical box
 	vbox := ui.NewVerticalBox()
 	vbox.SetPadded(true)
-	vbox.Append(ui.NewLabel("Configurações"), false)
+	vbox.Append(ui.NewLabel("Aqui você pode alterar o funcionamento do Alternative On"), false)
 	vbox.Append(ui.NewVerticalSeparator(), false)
 
-	group := ui.NewGroup("Configurações")
+	group := ui.NewGroup("Configurações disponíveis")
 	group.SetMargined(true)
 	vbox.Append(group, true)
 
 	//add text on a new multi-line entry read only
-	settingstext := ui.NewMultilineEntry()
-	settingstext.SetReadOnly(true)
-	settingstext.SetText("Configurações do Alternative On:\n\n- Não há configurações ainda.")
-	group.SetChild(settingstext)
+	settingsForm := ui.NewForm()
+	settingsForm.SetPadded(true)
+	group.SetChild(settingsForm)
+
+	settingsText := ui.NewMultilineEntry()
+	settingsText.SetReadOnly(true)
+	settingsText.SetText("Ajuda das configurações:\n\n- Mostrar terminal de depuração (Essa configuração mostra o terminal, mostrando sobre possiveis erros da aplicação)")
+	settingsForm.Append("", settingsText, true)
+
+	settingsShowDebug := ui.NewCheckbox("Mostrar terminal de depuração")
+	settingsShowDebug.OnToggled(func(*ui.Checkbox) {
+		if settingsShowDebug.Checked() {
+			fmt.Println("[i] O terminal foi configurado para ficar ativo.")
+			//Configure the terminal to show debug messages
+			setTerminal, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.SET_VALUE)
+			if err != nil {
+				fmt.Println("[E] Erro ao criar configuração para o terminal:", err)
+				ui.MsgBoxError(mainwin, "Erro", "Erro ao criar configuração para o terminal: "+err.Error()+"\nTente abrir a aplicação novamente como administrador.")
+				os.Exit(1)
+			}
+			err = setTerminal.SetDWordValue("HideCmd", 0)
+			if err != nil {
+				fmt.Println("[E] Erro ao configurar o terminal:", err)
+				ui.MsgBoxError(mainwin, "Erro", "Erro ao configurar o terminal: "+err.Error()+"\nTente abrir a aplicação novamente como administrador.")
+				os.Exit(1)
+			}
+		} else {
+			fmt.Println("[i] O terminal foi configurado para ficar inativo.")
+			//Configure the terminal to hide debug messages
+			setTerminal, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.SET_VALUE)
+			if err != nil {
+				fmt.Println("[w] Erro ao criar configuração para o terminal:", err)
+				ui.MsgBoxError(mainwin, "Erro", "Erro ao criar configuração para o terminal: "+err.Error()+"\nTente abrir a aplicação novamente como administrador.")
+				os.Exit(1)
+			}
+			err = setTerminal.SetDWordValue("HideCmd", 1)
+			if err != nil {
+				fmt.Println("[w] Erro ao configurar o terminal:", err)
+				ui.MsgBoxError(mainwin, "Erro", "Erro ao configurar o terminal: "+err.Error()+"\nTente abrir a aplicação novamente como administrador.")
+				os.Exit(1)
+			}
+		}
+	})
+	settingsForm.Append("", settingsShowDebug, false)
 
 	return vbox
 }
