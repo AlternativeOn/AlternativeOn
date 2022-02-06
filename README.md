@@ -3,10 +3,10 @@
 </h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/desenvolvimento-ativo-green?style=for-the-badge&logo=github">
-<img src="https://img.shields.io/badge/versão-windows-green?style=for-the-badge&logo=windows">
-<img src="https://img.shields.io/badge/versão-linux-red?style=for-the-badge&logo=linux">
-<img src="https://img.shields.io/badge/versão-android-red?style=for-the-badge&logo=android">
+<img src="https://img.shields.io/badge/desenvolvimento-ativo-success?style=for-the-badge&logo=github">
+<img src="https://img.shields.io/badge/versão-windows-success?style=for-the-badge&logo=windows">
+<img src="https://img.shields.io/badge/versão-linux-critical?style=for-the-badge&logo=linux">
+<img src="https://img.shields.io/badge/versão-android-critical?style=for-the-badge&logo=android">
 <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/alternativeon/alternativeon/total?style=for-the-badge">
 </p>
 
