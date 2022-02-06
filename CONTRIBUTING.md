@@ -59,3 +59,6 @@ Encontrou um bug? É aqui que você vai saber como enviar ele para a gente!
   - Se não tiver encontrado algum issue com o seu bug, [abra um novo issue](https://github.com/AlternativeOn/AlternativeOn/issues/new) e certifique-se de incluir um título e uma descrição clara, o máximo possível de informações relevantes e uma amostra de código ou um caso de teste executável demonstrando o comportamento esperado que não está ocorrendo.
   - Recomendamos que você siga os templetes de issues.
   
+## Agradecimentos
+
+Esse arquivo foi inspirado pelo [CONTRIBUTING.md do Ruby On Rails](https://github.com/rails/rails/blob/main/CONTRIBUTING.md) e o [CONTRIBUTING.md do opengovernment](https://github.com/opengovernment/opengovernment/blob/master/CONTRIBUTING.md).
