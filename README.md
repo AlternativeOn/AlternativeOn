@@ -24,11 +24,11 @@ A aplicação usa as APIs do Positivo On, que garante o funcionamento do site e 
 
 ## Por que eu deveria usar?
 
-Você talvez já tenha se deparado com uma tela dizendo que você não está em nenhuma turma, ou então que nenhuma solução foi encontrada. Ou você so quer praticidade de ter uma aplicação nativa para acessar a plataforma. O Alternative On resolve todos esses problemas! E ainda sem ficar te rastrear.
+Você talvez já tenha se deparado com uma tela dizendo que você não está em nenhuma turma, ou então que nenhuma solução foi encontrada. Ou você so quer praticidade de ter uma aplicação nativa para acessar a plataforma. O Alternative On resolve todos esses problemas! E ainda sem te rastrear.
 ### Questões sobre privacidade
-Como todo serviço online, você é rastreado ao usar um. Caso você seja paranoico com isso, esse cliente pode te ajudar, já que ele não faz nenhuma requisição para aa ferramentas de análise que o Postivo usa.
+Como todo serviço online, você é rastreado ao usar um. Caso você seja paranoico com isso, esse cliente pode te ajudar, já que ele não faz nenhuma requisição para as ferramentas de análise que o Postivo usa.
 
-Também nós não iremos coletar nenhum dado de você, nem mesmo seu usuário e senha, ou suas fotos de gatinhos.
+Também nós não iremos coletar nenhum dado de você, nem mesmo seu usuário, senha, ou suas fotos de gatinhos.
 
 ## Por que algumas soluções abrem o site do Postivo?
 
