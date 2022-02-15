@@ -48,7 +48,7 @@ O Alternative On **não é** afiliado com o Grupo Positivo ou com quaisquer de s
 
 ## Contribuindo
 
-Leia o arquivo [CONTRIBUING.MD](./CONTRIBUING.md)
+Leia o arquivo [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## Licença
 
