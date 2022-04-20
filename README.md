@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-<img src="https://img.shields.io/badge/desenvolvimento-pausado-yellow?style=for-the-badge&logo=github">
+<img src="https://img.shields.io/badge/desenvolvimento-ativo-success?style=for-the-badge&logo=github">
 <img src="https://img.shields.io/badge/versão-windows-success?style=for-the-badge&logo=windows">
 <img src="https://img.shields.io/badge/versão-linux-critical?style=for-the-badge&logo=linux">
 <img src="https://img.shields.io/badge/versão-android-critical?style=for-the-badge&logo=android">
@@ -14,7 +14,7 @@
 Alternative On é um projeto que visa ser um cliente alternativo a plataforma de estudos <a href="https://positivoon.com.br" target="_blank"> Positivo On</a>, contendo aplicativos próprios para Android, Linux e Windows.
 
 <br> <i> </i> <!-- eu adoro html e markdown -->
-<h3> <b> ATENÇÃO: O desenvolvimento foi temporariamente pausado para que a biblioteca que comunica com a API do Positivo seja desenvolvida </b> </h3>
+<!-- <h3> <b> ATENÇÃO: O desenvolvimento foi temporariamente pausado para que a biblioteca que comunica com a API do Positivo seja desenvolvida </b> </h3> -->
 <i> Atualmente temos o aplicativo apenas para o Windows. Em breve teremos para as outras plataformas citadas. </i>
 </h4>
 
