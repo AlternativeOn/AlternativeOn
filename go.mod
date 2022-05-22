@@ -3,9 +3,17 @@ module AltOn/Main
 go 1.17
 
 require (
+	github.com/alternativeon/llgg v1.0.2
+	github.com/alternativeon/pgo v1.0.0
 	github.com/gonutz/w32/v2 v2.2.3
 	github.com/ncruces/zenity v0.7.12
-	golang.org/x/sys v0.0.0-20210909193231-528a39cd75f3
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
+)
+
+require (
+	github.com/fatih/color v1.13.0 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 )
 
 require (
