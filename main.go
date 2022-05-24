@@ -1,4 +1,4 @@
-//Version: 0.0.5 (Beta 5)
+//Version: 0.0.7 (Beta 7)
 package main
 
 import (
