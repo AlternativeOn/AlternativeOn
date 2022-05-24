@@ -4,10 +4,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
-	"github.com/alternativeon/llgg"
 	"github.com/alternativeon/pgo"
 	"github.com/gonutz/w32/v2"
+	"github.com/mattn/go-colorable"
+	"github.com/rs/zerolog"
+	llgg "github.com/rs/zerolog/log"
 	"golang.org/x/sys/windows/registry"
 
 	"github.com/andlabs/ui"
@@ -50,36 +53,20 @@ type Error struct {
 }
 
 var mainwin *ui.Window
-var usertoken string
+var Usertoken string
+var start time.Time
 
 func init() {
-	//Check on registry if command prompt should be visible
-	k, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.QUERY_VALUE)
-	if err != nil {
-		llgg.Warn("Caminho da configuração do registro não encontrado, crindo...")
-		k, _, err = registry.CreateKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, uint32(registry.CURRENT_USER))
-		if err != nil {
-			llgg.Error("Erro ao criar chave no registro:" + err.Error() + "\nContinuando mesmo assim...")
-		}
-		llgg.Info("Configuração criada com sucesso.")
-		k.Close()
-		return
+	//Configuração do logger
+	logOutput := colorable.NewColorableStdout()
+	llgg.Logger = llgg.Output(zerolog.ConsoleWriter{Out: logOutput})
+	start = time.Now()
+	//Verifica no registro se o log deve ficar visivel
+	cfg, err := verificarConfigDebug()
+	if err != nil || cfg == -1 {
+		llgg.Warn().Str("Erro", err.Error()).Msg("Não foi possível verificar a configuração.")
 	}
-	defer k.Close()
-	val, _, err := k.GetIntegerValue("HideCmd")
-	if err != nil {
-		llgg.Warn("A configuração do terminal não foi criada, criando...")
-		setKey, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.SET_VALUE)
-		if err != nil {
-			llgg.Error("Erro ao criar configuração para o terminal:" + err.Error() + "\nContinuando mesmo assim...")
-		}
-		err = setKey.SetDWordValue("HideCmd", 1)
-		if err != nil {
-			llgg.Error("Erro ao configurar o terminal:" + err.Error() + "\nContinuando mesmo assim...")
-		}
-		return
-	}
-	if val == 1 {
+	if cfg == 1 {
 		//1 esconde o terminal
 		console := w32.GetConsoleWindow()
 		if console != 0 {
@@ -89,14 +76,11 @@ func init() {
 			}
 		}
 	}
-	k.Close()
-	zenity.Warning("Este é a beta de um cliente alternativo ao Positivo On, bugs podem ocorrer", zenity.Title("Aviso"), zenity.WarningIcon)
-
-	llgg.Info("Initialização completa.")
+	llgg.Trace().Str("Valor", fmt.Sprint(cfg)).Msg("Configuração Terminal:")
 }
 
 func loginPage() ui.Control {
-	//Create a login window on a vertical box
+	//Cria a UI de login
 	vbox := ui.NewVerticalBox()
 	vbox.SetPadded(true)
 	vbox.Append(ui.NewLabel("Para começarmos, faça seu login. Use o usuário e senha do Positivo On"), false)
@@ -126,35 +110,33 @@ func loginPage() ui.Control {
 		pass := pass.Text()
 		//check if user and password are empty
 		if user == "" || pass == "" {
-			llgg.Error("Usuário e senha não podem ser vazios.")
+			llgg.Error().Msg("Usuário tentou fazer login sem preencher os dados necessários.")
 			//error message
-			ui.MsgBoxError(mainwin, "Erro", "Usuário e senha não podem ser vazios.")
+			ui.MsgBoxError(mainwin, "Preencha todos os campos", "O campo de usuário e senha não podem ser vazios.")
 			loginButton.Enable()
 			return
 		}
 		//do login
-		llgg.Info("Iniciando login...")
-		usertoken, err := pgo.Login(user, pass)
+		llgg.Info().Msg("Iniciando login...")
+
+		usrtoken, err := pgo.Login(user, pass)
 		if err != nil {
-			llgg.Error("Erro ao fazer login:" + err.Error())
+			llgg.Error().Msg("Erro ao fazer login:" + err.Error())
 			ui.MsgBoxError(mainwin, "Erro", "Erro ao fazer login:"+err.Error())
 			loginButton.Enable()
 			return
 		}
-		llgg.Info("Login realizado com sucesso.")
+		Usertoken = usrtoken
+		llgg.Info().Str("Token", "*****").Msg("Login realizado com sucesso.")
+
 		//go to main page
-		mainwin.SetChild(mainWindow())
+		mainwin.SetChild(loggedWindow())
 		loginButton.Enable()
-		token(usertoken)
 
 	})
 	aboutform.Append("", loginButton, false)
 
 	return vbox
-}
-
-func token(string) string {
-	return usertoken
 }
 
 func aboutPage() ui.Control {
@@ -231,9 +213,16 @@ func settingsPage() ui.Control {
 	settingsForm.Append("", settingsText, true)
 
 	settingsShowDebug := ui.NewCheckbox("Mostrar terminal de depuração")
+	valor, err := verificarConfigDebug()
+	if err != nil || valor == -1 {
+		llgg.Warn().Str("Erro", err.Error()).Msg("Não foi possível verificar a configuração.")
+	}
+	if valor == 0 {
+		settingsShowDebug.SetChecked(true)
+	}
 	settingsShowDebug.OnToggled(func(*ui.Checkbox) {
 		if settingsShowDebug.Checked() {
-			fmt.Println("[i] O terminal foi configurado para ficar ativo.")
+			llgg.Info().Msg("O terminal foi configurado para ficar ativo.")
 			//Configure the terminal to show debug messages
 			setTerminal, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.SET_VALUE)
 			if err != nil {
@@ -248,7 +237,7 @@ func settingsPage() ui.Control {
 				os.Exit(1)
 			}
 		} else {
-			fmt.Println("[i] O terminal foi configurado para ficar inativo.")
+			llgg.Info().Msg("O terminal foi configurado para ficar inativo.")
 			//Configure the terminal to hide debug messages
 			setTerminal, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.SET_VALUE)
 			if err != nil {
@@ -269,7 +258,7 @@ func settingsPage() ui.Control {
 	return vbox
 }
 
-func mainWindow() ui.Control {
+func loggedWindow() ui.Control {
 	//Create a main window on a vertical box
 	vbox := ui.NewVerticalBox()
 	vbox.SetPadded(true)
@@ -281,10 +270,16 @@ func mainWindow() ui.Control {
 	vbox.Append(form, true)
 
 	//add text on a new multi-line entry read only
-	aboutText := ui.NewMultilineEntry()
-	aboutText.SetReadOnly(true)
-	aboutText.SetText(token(usertoken))
-	form.Append("", aboutText, true)
+	irParaHw := ui.NewButton("Ver novas atividades/avaliações/treinos")
+	irParaHw.OnClicked(func(*ui.Button) {
+		//Abre a página de atividades
+
+		err := w32.ShellExecute(0, "open", pgo.GetHomework(Usertoken), "", "", w32.SW_SHOW)
+		if err != nil {
+			fmt.Println("[E]", err)
+		}
+	})
+	form.Append("", irParaHw, false)
 	return vbox
 }
 
@@ -309,13 +304,12 @@ func setupUI() {
 	tab.SetMargined(1, true)
 	tab.Append("Configurações", settingsPage())
 	tab.SetMargined(2, true)
-	
 
 	mainwin.Show()
 }
 
-func showMainUI() {
-mainwin = ui.NewWindow("Alternative On", 640, 480, true)
+func showAfterLoginUI() {
+	mainwin = ui.NewWindow("Alternative On", 640, 480, true)
 	mainwin.OnClosing(func(*ui.Window) bool {
 		ui.Quit()
 		return true
@@ -328,178 +322,35 @@ mainwin = ui.NewWindow("Alternative On", 640, 480, true)
 	tab := ui.NewTab()
 	mainwin.SetChild(tab)
 	mainwin.SetMargined(true)
-	
-tab.Append("Home", mainWindow())
-tab.SetMargined(0, true)
-}
 
+	tab.Append("Home", loggedWindow())
+	tab.SetMargined(0, true)
+}
 
 func main() {
+	llgg.Info().Str("Tempo", fmt.Sprint(time.Since(start))).Msg("Inicialização completa.")
+	zenity.Warning("Note que este é um cliente alternativo ao Positivo On EM FASE DE TESTES, e que bugs podem ocorrer eventualmente.", zenity.Title("Atenção"), zenity.WarningIcon)
 	ui.Main(setupUI)
-	user, err := zenity.Entry("Qual o seu usuário do Positivo On?", zenity.Title("Usuário"), zenity.InfoIcon)
-	if err != nil {
-		fmt.Println("[i] {username}", err)
-		os.Exit(0)
-	}
-	if user == "" {
-		zenity.Error("Usuário não informado", zenity.Title("Erro"), zenity.ErrorIcon)
-		fmt.Println("[w] Usuário não informado")
-		main()
-	}
-	_, pass, err := zenity.Password(zenity.Title("Qual a sua senha do Positivo On?"))
-	if err != nil {
-		fmt.Println("[i] {password}", err)
-		os.Exit(0)
-	}
-	if pass == "" {
-		zenity.Error("Senha não informada", zenity.Title("Erro"), zenity.ErrorIcon)
-		fmt.Println("[w] Senha não informada")
-		main()
-	}
-	fmt.Println("[d] Sending initial request")
+}
 
-	//Post request and unmarshal response.
-	token, err := pgo.Login(user, pass)
+func verificarConfigDebug() (int, error) {
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.QUERY_VALUE)
 	if err != nil {
-		fmt.Println("[E] Login falhou", err)
-		os.Exit(1)
+		return -1, err
 	}
-	fmt.Println("[d] Login sucess!\n[d - 166] Token:", token)
-	/*solutions, err := authReq("https://apihub.positivoon.com.br/api/Categoria/Solucoes/Perfil/ALUNO?NivelEnsino=EM&IdEscola=149259e8-6864-4f41-a3c8-6c624184bc56", "GET", token)
+	defer k.Close()
+	configEsconderDebug, _, err := k.GetIntegerValue("HideCmd")
 	if err != nil {
-		fmt.Println(err)
-	}
-	//Unmarshal response
-	fmt.Println("[d] Solutions loaded sucessfully!!\n[d - 122]:", solutions)
-	zenity.Info("As soluções foram carregadas com sucesso!", zenity.Title("Soluções Carregadas!"), zenity.InfoIcon)
-	//Unmarshal json response
-	var autoGenerated AutoGenerated
-	err = json.Unmarshal([]byte(solutions), &autoGenerated)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	//Add solutions to list
-	var list []string
-	for _, solution := range autoGenerated {
-		list = append(list, solution.Nome)
-	}
-	//Print solutions list
-	fmt.Println("[d] Solutions list:", list)
-	//Get links from solutions
-	var links []string
-	for _, solution := range autoGenerated {
-		for _, sol := range solution.Solucoes {
-			links = append(links, sol.Link)
-		}
-	}
-	//Print links
-	fmt.Println("[d] Links:", links)
-
-	//Ask for solution
-	ssolution, err := zenity.List("Escolha uma solução", list, zenity.Title("Solução"))
-	fmt.Println("[d] Solution:", ssolution)
-	if err != nil {
-		fmt.Println(err)
-	}
-	//switch solution
-	switch ssolution {
-	case "Avaliação":
-		//Open Avaliações in browser
-		//First, get link from Avaliações from json
-		var links []string
-		for _, solution := range autoGenerated {
-			for _, sol := range solution.Solucoes {
-				links = append(links, sol.Link)
-			}
-		}
-		//Print links
-		fmt.Println("[d] {switch} Links:", links)
-		//Print solution
-		fmt.Println("[d] {switch} Solution:", ssolution)
-		//change {token} to token
-		newlink := strings.Replace(links[0], "{token}", token, -1)
-		fmt.Println("[d] {switch} New link:", newlink)
-		//Open link in browser
-		err := w32.ShellExecute(0, "open", newlink, "", "", w32.SW_SHOW)
+		llgg.Info().Msg("A configuração do terminal não foi criada, criando a configuração...")
+		setKey, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.SET_VALUE)
 		if err != nil {
-			fmt.Println("[E]", err)
+			llgg.Warn().Msg("Erro ao criar configuração para o terminal:" + err.Error() + "\nContinuando mesmo assim...")
 		}
-
-	default:
-		fmt.Println("[d] {switch} Solution:", ssolution)
-		zenity.Warning("Solução não implementada ainda, tente em uma próxima build :)", zenity.Title("Solução não implementada"), zenity.WarningIcon)
+		err = setKey.SetDWordValue("HideCmd", 1)
+		if err != nil {
+			llgg.Warn().Msg("Erro ao configurar o terminal:" + err.Error() + "\nContinuando mesmo assim...")
+		}
 	}
-	*/
+	k.Close()
+	return int(configEsconderDebug), nil
 }
-
-/*func postReq(url string, method string, payload string) (string, error) {
-
-	client := &http.Client{}
-	fmt.Println("[d | postReq] Payload:", payload)
-	req, err := http.NewRequest(method, url, strings.NewReader(payload))
-
-	if err != nil {
-		fmt.Println("[e | postReq]", err)
-		return "Failed to create request:", err
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	res, err := client.Do(req)
-	if err != nil {
-		fmt.Println("[e | postReq]", err)
-		return "Failed to send request: ", err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println("[e | postReq]", err)
-		return "Failed to read response: ", err
-	}
-
-	//fmt.Println("[d] Response:", string(body))
-	//Check if response is valid
-	if res.StatusCode != 200 {
-		//Unmarshal error response
-		var errResp Error
-		json.Unmarshal(body, &errResp)
-		fmt.Println("[e | postReq] Error:", errResp.Error)
-		fmt.Println("[e | postReq] Error description:", errResp.ErrorDescription)
-		zenity.Error(errResp.ErrorDescription, zenity.Title("Erro"), zenity.ErrorIcon)
-		return errResp.Error + ": " + errResp.ErrorDescription, err
-	}
-	//Unmarshal response
-	var token Token
-	json.Unmarshal(body, &token)
-	//convert int to string
-	expiresIn := fmt.Sprintf("%d", token.ExpiresIn)
-	fmt.Println("[d | postReq] Token: "+token.AccessToken, "\n[d | postReq] Refresh Token: "+token.RefreshToken, "\n[d | postReq] Expires In: "+expiresIn, "\n[d | postReq] Token Type: "+token.TokenType)
-	zenity.Info("Login realizado com sucesso!\n\nIremos agora tentar carregar as soluções...", zenity.Title("Login realizado com sucesso!"), zenity.InfoIcon)
-	return token.AccessToken, nil
-}
-
-func authReq(url string, method string, token string) (string, error) {
-
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		return "", err
-	}
-	req.Header.Add("Authorization", "Bearer "+token)
-
-	res, err := client.Do(req)
-	if err != nil {
-		fmt.Println("[e | authReq]", err)
-		return "", err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println("[e | authReq]", err)
-		return "", err
-	}
-	return string(body), nil
-}*/
