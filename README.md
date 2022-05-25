@@ -58,9 +58,9 @@ Este projeto é licenciado para você sobre a licença BSD 3-Cláusula “Nova�
 
 Esse projeto so é possível graças a:
 - [Go (Linguagem usada)](https://go.dev)
-- [ui (Biblioteca de interface grafica)](github.com/andlabs/ui)
-- [zenity (Biblioteca de dialogos)](github.com/ncruces/zenity)
-- [w32 (Biblioteca de varias funções do Windows)](github.com/gonutz/w32/v2)
+- [ui (Biblioteca de interface grafica)](https://github.com/andlabs/ui)
+- [zenity (Biblioteca de dialogos)](https://github.com/ncruces/zenity)
+- [w32 (Biblioteca de varias funções do Windows)](https://github.com/gonutz/w32/v2)
 - [Postman](https://postman.com)
 - Alguns amigos incriveis
 - E você, por usar a aplicação! 
