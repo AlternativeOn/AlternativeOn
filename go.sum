@@ -1,7 +1,7 @@
 github.com/akavel/rsrc v0.10.2 h1:Zxm8V5eI1hW4gGaYsJQUhxpjkENuG91ki8B4zCrvEsw=
 github.com/akavel/rsrc v0.10.2/go.mod h1:uLoCtb9J+EyAqh+26kdrTgmzRBFPGOolLWKpdxkKq+c=
-github.com/alternativeon/pgo v1.0.0 h1:yD4MxSDyIEuMKUjaabmJBEq808Otr5deO5yzL4eod6w=
-github.com/alternativeon/pgo v1.0.0/go.mod h1:3KPozH7GjeD3j7DAOkitT30ygxSf5G3dCY+rVa6eEuU=
+github.com/alternativeon/pgo v1.0.1 h1:ggLetVlSN0Rq05W0QitfkgDpY/nFKky1Jvsy5zVIvHo=
+github.com/alternativeon/pgo v1.0.1/go.mod h1:3KPozH7GjeD3j7DAOkitT30ygxSf5G3dCY+rVa6eEuU=
 github.com/andlabs/ui v0.0.0-20200610043537-70a69d6ae31e h1:wSQCJiig/QkoUnpvelSPbLiZNWvh2yMqQTQvIQqSUkU=
 github.com/andlabs/ui v0.0.0-20200610043537-70a69d6ae31e/go.mod h1:5G2EjwzgZUPnnReoKvPWVneT8APYbyKkihDVAHUi0II=
 github.com/coreos/go-systemd/v22 v22.3.2/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=

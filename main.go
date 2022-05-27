@@ -117,12 +117,12 @@ func loginPage() ui.Control {
 			return
 		}
 		//do login
-		llgg.Info().Msg("Iniciando login...")
+		llgg.Trace().Msg("Iniciando login...")
 
 		usrtoken, err := pgo.Login(user, pass)
 		if err != nil {
-			llgg.Error().Msg("Erro ao fazer login:" + err.Error())
-			ui.MsgBoxError(mainwin, "Erro", "Erro ao fazer login:"+err.Error())
+			llgg.Error().Str("Detalhes", err.Error()).Msg("Erro ao fazer login!")
+			ui.MsgBoxError(mainwin, "Erro ao realizar a autenticação!", err.Error())
 			loginButton.Enable()
 			return
 		}
@@ -160,7 +160,7 @@ func aboutPage() ui.Control {
 	abouttext.SetText("Este é um cliente alternativo ao Positivo On, ele foi desenvolvido para facilitar o uso da plataforma, e ainda está na fase beta.\n\nO projeto é mantido pelo grupo de desenvolvimento da Princess Mortix, e é um projeto open source, você pode acessar o projeto no github clicando no botão abaixo.\nCaso você queira contribuir com o projeto, você pode acessar o github você pode enviar um issue, ou se preferir, você pode enviar um pull request diretamente no github.\n\nObrigado por usar o Alternative On!\n\n**Politica de Privacidade:**\nNós não coletamos nenhum dado de você, mas talvez a plataforma Positivo On, que é um serviço de terceiros, coleta dados de usuários.")
 	aboutform.Append("", abouttext, true)
 	//add a button to open the github page
-	ghlink := ui.NewButton("Acessar o projeto no github")
+	ghlink := ui.NewButton("Acessar o projeto no GitHub")
 	ghlink.OnClicked(func(*ui.Button) {
 		//open the github page
 		err := w32.ShellExecute(0, "open", "https://github.com/PrincessMortix/AlternativeOn", "", "", w32.SW_SHOW)

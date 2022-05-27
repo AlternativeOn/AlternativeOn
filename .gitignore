@@ -15,4 +15,7 @@
 *.json
 
 # Go-winres directory
-/winres
+./winres
+
+# Build scripts
+*.bat

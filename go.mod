@@ -3,7 +3,7 @@ module AltOn/Main
 go 1.17
 
 require (
-	github.com/alternativeon/pgo v1.0.0
+	github.com/alternativeon/pgo v1.0.1
 	github.com/gonutz/w32/v2 v2.2.3
 	github.com/mattn/go-colorable v0.1.12
 	github.com/ncruces/zenity v0.7.12
