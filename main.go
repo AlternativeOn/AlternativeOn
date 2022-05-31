@@ -3,7 +3,7 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"strings"
 	"time"
 
 	"github.com/alternativeon/pgo"
@@ -54,7 +54,9 @@ type Error struct {
 
 var mainwin *ui.Window
 var Usertoken string
+var Username string
 var start time.Time
+var version = "0.0.8"
 
 func init() {
 	//Configuração do logger
@@ -127,11 +129,19 @@ func loginPage() ui.Control {
 			return
 		}
 		Usertoken = usrtoken
-		llgg.Info().Str("Token", "*****").Msg("Login realizado com sucesso.")
-
-		//go to main page
-		mainwin.SetChild(loggedWindow())
-		loginButton.Enable()
+		llgg.Info().Msg("Login realizado com sucesso!")
+		llgg.Trace().Msg("Tentando pegar as informações do usuário...")
+		username, err := pgo.GetUserName(Usertoken)
+		if err != nil {
+			llgg.Error().Str("Erro", err.Error()).Msg("Problema ao obter o nome do usuário!")
+		}
+		//Corta o nome do usuário, mostrando apenas o primeiro nome
+		Username = strings.Split(username, " ")[0]
+		llgg.Trace().Str("Nome do usuário", Username).Msg("Nome obtido com sucesso!")
+		//Vai para a página apos o login
+		mainwin.Destroy()
+		mostrarUiAposLogin()
+		ui.Quit()
 
 	})
 	aboutform.Append("", loginButton, false)
@@ -154,34 +164,34 @@ func aboutPage() ui.Control {
 	aboutform.SetPadded(true)
 	group.SetChild(aboutform)
 
-	//add text on a new multi-line entry read only
+	//Sobre o aplicativo, na página principal
 	abouttext := ui.NewMultilineEntry()
 	abouttext.SetReadOnly(true)
 	abouttext.SetText("Este é um cliente alternativo ao Positivo On, ele foi desenvolvido para facilitar o uso da plataforma, e ainda está na fase beta.\n\nO projeto é mantido pelo grupo de desenvolvimento da Princess Mortix, e é um projeto open source, você pode acessar o projeto no github clicando no botão abaixo.\nCaso você queira contribuir com o projeto, você pode acessar o github você pode enviar um issue, ou se preferir, você pode enviar um pull request diretamente no github.\n\nObrigado por usar o Alternative On!\n\n**Politica de Privacidade:**\nNós não coletamos nenhum dado de você, mas talvez a plataforma Positivo On, que é um serviço de terceiros, coleta dados de usuários.")
 	aboutform.Append("", abouttext, true)
-	//add a button to open the github page
+	//Botão com o link pro GitHub
 	ghlink := ui.NewButton("Acessar o projeto no GitHub")
 	ghlink.OnClicked(func(*ui.Button) {
-		//open the github page
+		//Abre a página
 		err := w32.ShellExecute(0, "open", "https://github.com/PrincessMortix/AlternativeOn", "", "", w32.SW_SHOW)
 		if err != nil {
-			fmt.Println("[E]", err)
+			llgg.Error().Str("Erro", err.Error()).Msg("Não foi possivel abrir o link!")
 		}
 	})
 	terms := ui.NewButton("Termos do Positivo On")
 	terms.OnClicked(func(*ui.Button) {
-		//open the github page
+		//Abre a página
 		err := w32.ShellExecute(0, "open", "https://positivoon.com.br/#/termos-de-uso", "", "", w32.SW_SHOW)
 		if err != nil {
-			fmt.Println("[E]", err)
+			llgg.Error().Str("Erro", err.Error()).Msg("Não foi possivel abrir o link!")
 		}
 	})
 	privacy := ui.NewButton("Política de Privacidade do Positivo On")
 	privacy.OnClicked(func(*ui.Button) {
-		//open the github page
+		//também abre a página
 		err := w32.ShellExecute(0, "open", "https://positivoon.com.br/#/politica-de-privacidade", "", "", w32.SW_SHOW)
 		if err != nil {
-			fmt.Println("[E]", err)
+			llgg.Error().Str("Erro", err.Error()).Msg("Não foi possivel abrir o link!")
 		}
 	})
 	aboutform.Append("", terms, false)
@@ -192,7 +202,7 @@ func aboutPage() ui.Control {
 }
 
 func settingsPage() ui.Control {
-	//Create a settings window on a vertical box
+	//Cria a janela de configurações
 	vbox := ui.NewVerticalBox()
 	vbox.SetPadded(true)
 	vbox.Append(ui.NewLabel("Aqui você pode alterar o funcionamento do Alternative On"), false)
@@ -202,14 +212,14 @@ func settingsPage() ui.Control {
 	group.SetMargined(true)
 	vbox.Append(group, true)
 
-	//add text on a new multi-line entry read only
+	//Texto explicativo fica por aqui, seta pra baixo
 	settingsForm := ui.NewForm()
 	settingsForm.SetPadded(true)
 	group.SetChild(settingsForm)
 
 	settingsText := ui.NewMultilineEntry()
 	settingsText.SetReadOnly(true)
-	settingsText.SetText("Ajuda das configurações:\n\n- Mostrar terminal de depuração (Essa configuração mostra o terminal, mostrando sobre possiveis erros da aplicação)")
+	settingsText.SetText("Ajuda das configurações:\n\n- Mostrar terminal de depuração (Essa configuração mostra o terminal, mostrando sobre possiveis erros da aplicação)\n\n- Abrir links no navegador padrão (Essa configuração permite que alguns links sejam abertos no seu navegador preferido, ao invez de usar o navegador embutido na aplicação. Note que o navegador embutido requer uma instalação adicional de recursos na máquina.)")
 	settingsForm.Append("", settingsText, true)
 
 	settingsShowDebug := ui.NewCheckbox("Mostrar terminal de depuração")
@@ -223,63 +233,34 @@ func settingsPage() ui.Control {
 	settingsShowDebug.OnToggled(func(*ui.Checkbox) {
 		if settingsShowDebug.Checked() {
 			llgg.Info().Msg("O terminal foi configurado para ficar ativo.")
-			//Configure the terminal to show debug messages
+			//Configura o terminal pra mostrar as mensagens de debug
 			setTerminal, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.SET_VALUE)
 			if err != nil {
-				fmt.Println("[E] Erro ao criar configuração para o terminal:", err)
 				ui.MsgBoxError(mainwin, "Erro", "Erro ao criar configuração para o terminal: "+err.Error()+"\nTente abrir a aplicação novamente como administrador.")
-				os.Exit(1)
+				llgg.Fatal().Str("Erro", err.Error()).Msg("Erro grave ao criar a configuração para o terminal! O programa irá sair agora...")
 			}
 			err = setTerminal.SetDWordValue("HideCmd", 0)
 			if err != nil {
-				fmt.Println("[E] Erro ao configurar o terminal:", err)
 				ui.MsgBoxError(mainwin, "Erro", "Erro ao configurar o terminal: "+err.Error()+"\nTente abrir a aplicação novamente como administrador.")
-				os.Exit(1)
+				llgg.Fatal().Str("Erro", err.Error()).Msg("Erro grave ao criar a configuração para o terminal! O programa irá sair agora...")
 			}
 		} else {
 			llgg.Info().Msg("O terminal foi configurado para ficar inativo.")
-			//Configure the terminal to hide debug messages
+			//Configura o terminal pra esconder as mensagens de debug
 			setTerminal, err := registry.OpenKey(registry.CURRENT_USER, `Software\Princess Mortix\Alternative On`, registry.SET_VALUE)
 			if err != nil {
-				fmt.Println("[w] Erro ao criar configuração para o terminal:", err)
 				ui.MsgBoxError(mainwin, "Erro", "Erro ao criar configuração para o terminal: "+err.Error()+"\nTente abrir a aplicação novamente como administrador.")
-				os.Exit(1)
+				llgg.Fatal().Str("Erro", err.Error()).Msg("Erro grave ao criar a configuração para o terminal! O programa irá sair agora...")
 			}
 			err = setTerminal.SetDWordValue("HideCmd", 1)
 			if err != nil {
-				fmt.Println("[w] Erro ao configurar o terminal:", err)
 				ui.MsgBoxError(mainwin, "Erro", "Erro ao configurar o terminal: "+err.Error()+"\nTente abrir a aplicação novamente como administrador.")
-				os.Exit(1)
+				llgg.Fatal().Str("Erro", err.Error()).Msg("Erro grave ao criar a configuração para o terminal! O programa irá sair agora...")
 			}
 		}
 	})
 	settingsForm.Append("", settingsShowDebug, false)
 
-	return vbox
-}
-
-func loggedWindow() ui.Control {
-	//Create a main window on a vertical box
-	vbox := ui.NewVerticalBox()
-	vbox.SetPadded(true)
-	vbox.Append(ui.NewLabel("Alternative On"), false)
-	vbox.Append(ui.NewVerticalSeparator(), false)
-
-	form := ui.NewForm()
-	form.SetPadded(true)
-	vbox.Append(form, true)
-
-	//add text on a new multi-line entry read only
-	irParaHw := ui.NewButton("Ver novas atividades/avaliações/treinos")
-	irParaHw.OnClicked(func(*ui.Button) {
-		//Abre a página de atividades
-
-		err := w32.ShellExecute(0, "open", pgo.GetHomework(Usertoken), "", "", w32.SW_SHOW)
-		if err != nil {
-			fmt.Println("[E]", err)
-		}
-	})
-	form.Append("", irParaHw, false)
 	return vbox
 }
 
@@ -306,25 +287,6 @@ func setupUI() {
 	tab.SetMargined(2, true)
 
 	mainwin.Show()
-}
-
-func showAfterLoginUI() {
-	mainwin = ui.NewWindow("Alternative On", 640, 480, true)
-	mainwin.OnClosing(func(*ui.Window) bool {
-		ui.Quit()
-		return true
-	})
-	ui.OnShouldQuit(func() bool {
-		mainwin.Destroy()
-		return true
-	})
-
-	tab := ui.NewTab()
-	mainwin.SetChild(tab)
-	mainwin.SetMargined(true)
-
-	tab.Append("Home", loggedWindow())
-	tab.SetMargined(0, true)
 }
 
 func main() {

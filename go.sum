@@ -1,7 +1,7 @@
 github.com/akavel/rsrc v0.10.2 h1:Zxm8V5eI1hW4gGaYsJQUhxpjkENuG91ki8B4zCrvEsw=
 github.com/akavel/rsrc v0.10.2/go.mod h1:uLoCtb9J+EyAqh+26kdrTgmzRBFPGOolLWKpdxkKq+c=
-github.com/alternativeon/pgo v1.0.1 h1:ggLetVlSN0Rq05W0QitfkgDpY/nFKky1Jvsy5zVIvHo=
-github.com/alternativeon/pgo v1.0.1/go.mod h1:3KPozH7GjeD3j7DAOkitT30ygxSf5G3dCY+rVa6eEuU=
+github.com/alternativeon/pgo v1.0.2 h1:Z4G6IwwJgyOxxCmQMb8yFI9HAGDk7bg6GHQ3mO5fMFU=
+github.com/alternativeon/pgo v1.0.2/go.mod h1:3KPozH7GjeD3j7DAOkitT30ygxSf5G3dCY+rVa6eEuU=
 github.com/andlabs/ui v0.0.0-20200610043537-70a69d6ae31e h1:wSQCJiig/QkoUnpvelSPbLiZNWvh2yMqQTQvIQqSUkU=
 github.com/andlabs/ui v0.0.0-20200610043537-70a69d6ae31e/go.mod h1:5G2EjwzgZUPnnReoKvPWVneT8APYbyKkihDVAHUi0II=
 github.com/coreos/go-systemd/v22 v22.3.2/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
@@ -11,8 +11,13 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/dchest/jsmin v0.0.0-20160823214000-faeced883947 h1:Fm10/KNuoAyBm2P5P5H91Xy21hGcZnBdjR+cMdytv1M=
 github.com/dchest/jsmin v0.0.0-20160823214000-faeced883947/go.mod h1:Dv9D0NUlAsaQcGQZa5kc5mqR9ua72SmA8VXi4cd+cBw=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
+github.com/gonutz/check v1.2.0 h1:PVjoa4xwUU0XAH4/6mdg4kJ9BCCTIiwmBxImLJxCkp8=
+github.com/gonutz/check v1.2.0/go.mod h1:J5ndBcNQd4fv3I+Moevk4PXZoyXRamwwclm6dDgAuyA=
+github.com/gonutz/w32/v2 v2.2.2/go.mod h1:MgtHx0AScDVNKyB+kjyPder4xIi3XAcHS6LDDU2DmdE=
 github.com/gonutz/w32/v2 v2.2.3 h1:YxWG6BHionNCIN0T0q1tu/xAbknvyEE7/8yW3DqhjVw=
 github.com/gonutz/w32/v2 v2.2.3/go.mod h1:MgtHx0AScDVNKyB+kjyPder4xIi3XAcHS6LDDU2DmdE=
+github.com/gonutz/wui/v2 v2.8.0 h1:AGR/nze+Ihh/yX2quIK/CKV/M5VBLKwqYD7jE3pDZrk=
+github.com/gonutz/wui/v2 v2.8.0/go.mod h1:4twV9Ka+OwAr7Fy12YSJuAy5e4u8uTHk4YbxFyguheo=
 github.com/josephspurrier/goversioninfo v1.3.0 h1:pmgDhWnG8I59p5kCR09J73s/gy9JqRPAtiaUK8jixtE=
 github.com/josephspurrier/goversioninfo v1.3.0/go.mod h1:JWzv5rKQr+MmW+LvM412ToT/IkYDZjaclF2pKDss8IY=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
