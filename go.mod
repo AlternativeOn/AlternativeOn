@@ -9,7 +9,7 @@ require (
 	github.com/mattn/go-colorable v0.1.12
 	github.com/ncruces/zenity v0.7.12
 	github.com/rs/zerolog v1.26.1
-	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
+	golang.org/x/sys v0.1.0
 )
 
 require (
