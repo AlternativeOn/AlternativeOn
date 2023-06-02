@@ -100,7 +100,7 @@ func main() {
 }
 
 func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, dadosUsuario pgo.Token) {
-	links := pgo.ObterRecursos(dadosUsuario.IdEscola, dadosUsuario.Token)
+	links := pgo.ObterRecursos(dadosUsuario.IdEscola, dadosUsuario.Token, dadosUsuario.TokenParceiro)
 
 	//UI APOS O LOGIN
 	/* Tab 1: Principal */

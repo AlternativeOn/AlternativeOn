@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	fyne.io/fyne/v2 v2.3.4
-	github.com/alternativeon/pgo/v2 v2.0.3
+	github.com/alternativeon/pgo/v2 v2.1.1
 )
 
 require (
