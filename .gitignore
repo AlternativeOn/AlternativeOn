@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+*.apk
 
 # Test binary, build with `go test -c`
 *.test
@@ -16,6 +17,9 @@
 
 # Go-winres directory
 ./winres
+*.png
 
-# Build scripts
+# Build 
 *.bat
+fyne_metadata_init.go
+*.keystore
