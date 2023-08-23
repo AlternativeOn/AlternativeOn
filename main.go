@@ -1,15 +1,18 @@
-// Version: 0.0.7 (Beta 7)
+// Versão: 1.0.0-RC1 (Candidato 1)
 package main
 
 import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"image/color"
 	"net/url"
 	"os"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
@@ -18,89 +21,133 @@ import (
 	"github.com/alternativeon/pgo/v2"
 )
 
-//go:embed winres/icon.png
-var windowIcon []byte
-var textoHub = `## Aqui você pode acessar suas atividades, livros e mensagens`
-var textoFuncLivros = `Acesse seus livros digitais no formato de PDF. 
-
-**Função ainda em desenvolvimento**, e não implementada no aplicativo ainda.`
-var textoTabConta = `## Aqui você pode controlar e alterar sua conta do Positivo.
-
-Atualmente é possivel:
-- Ver o nome e escola
-
-É planejado poder mudar a sua senha nesta aba.`
-var textoTabSobre = `## Alternative On - v0.1.0
-
-Alternative On é um projeto que visa ser um cliente alternativo a plataforma de estudos Positivo On, contendo aplicativos próprios para Android, Linux e Windows.
-
-**Veja mais sobre o projeto no página do Github.**
-
-
-
-## Créditos:
-- Fyne
-- Postman
-- Yngrid, Luis Fernado
-- Tamiris, Nicole, Maria Cecilia
-- Todo mundo que contribui no desenvolvimento programacional (<3)
-- E você, por usar o aplicativo!
-
----
-> Aplicativo licenciado para você sobre a licença BSD-3. O icone do aplicativo está sobre a licença do Creative Commons BY-NC (CC BY-NC)
-
-> Os outros icones dentro do aplicativo estão lincenciados sobre a licença do Fyne.
-`
-
 func main() {
+	//Inicialização da UI
 	alternativeOnApp := app.NewWithID("link.princessmortix.aon")
 	alternativeOnWindow := alternativeOnApp.NewWindow("Alternative ON")
-	alternativeOnWindow.Resize(fyne.NewSize(800, 600))
-	//alternativeOnWindow.SetFixedSize(true)
+	alternativeOnWindow.Resize(fyne.NewSize(800, 200))
 	alternativeOnWindow.SetTitle("Alternative On - Login")
 	alternativeOnWindow.SetIcon(&fyne.StaticResource{StaticName: "Icon", StaticContent: windowIcon})
-
-	loginPaneSparator := widget.NewSeparator()
-	loginPaneText := widget.NewLabel("Faça seu login para continuarmos. Utilize o mesmo usuário e senha do Positivo On.")
-	loginPaneText.Wrapping = fyne.TextWrapWord
-	loginPaneUser := widget.NewEntry()
-	loginPanePass := widget.NewPasswordEntry()
-	loginPaneEntry := &widget.Form{
-		Items: []*widget.FormItem{{Text: "Usuário", Widget: loginPaneUser}, {Text: "Senha", Widget: loginPanePass}},
-		OnSubmit: func() {
-			loginPaneUser.Disable()
-			loginPanePass.Disable()
-			if loginPaneUser.Text == "" || loginPanePass.Text == "" {
-				dialog.ShowError(errors.New("O usuário nem a senha podem ficar vazios."), alternativeOnWindow)
-				loginPaneUser.Enable()
-				loginPanePass.Enable()
-				return
-			}
-			userData, err := pgo.Login(loginPaneUser.Text, loginPanePass.Text)
-			if err != nil {
-				fmt.Println(err)
-				dialog.ShowError(errors.New("Não foi possivel fazer o login\nVerifique o usuário e a senha e tente novamente."), alternativeOnWindow)
-				loginPaneUser.Enable()
-				loginPanePass.Enable()
-				return
-			}
-			alternativeOnWindow.SetTitle("Alternative On")
-			//links := pgo.ObterRecursos(userData.IdEscola, userData.Token)
-
-			//dialog.ShowInformation("Sucesso!", "O login foi feito com sucesso!", alternativeOnWindow)
-			mudarConteudoAposLogin(alternativeOnWindow, alternativeOnApp, *userData)
-		},
-		SubmitText: "Fazer Login",
+	alternativeOnMetadata := fyne.AppMetadata{
+		Build:   int(fyne.BuildRelease),
+		Name:    "Alternative On",
+		Release: true,
 	}
-	loginPane := container.New(layout.NewVBoxLayout(), loginPaneText, loginPaneSparator, loginPaneEntry)
+	app.SetMetadata(alternativeOnMetadata)
+
+	//Sessão do usuário
+	fmt.Println(strings.Contains(alternativeOnApp.Preferences().String("config_session"), "yes"))
+	if alternativeOnApp.Preferences().String("config_session") == "" {
+		alternativeOnApp.Preferences().SetString("username", "")
+		alternativeOnApp.Preferences().SetString("password", "")
+	}
+	//Sessão do usuário
+
+	//Login do usuário
+	loginPainelTextoAjuda := widget.NewRichTextFromMarkdown(textoPainelLogin)
+	loginPainelTextoAjuda.Wrapping = fyne.TextWrapWord
+	loginPainelLoginUsuarioTexto := widget.NewLabel("Usuário")
+	loginPainelLoginUsuarioTexto.TextStyle = fyne.TextStyle{
+		Bold: true,
+	}
+
+	loginPainelLoginUsuario := widget.NewEntry()
+	loginPainelLoginUsuario.PlaceHolder = "Coloque seu usuário aqui"
+	loginPainelLoginSenhaTexto := widget.NewLabel("Senha")
+	loginPainelLoginSenhaTexto.TextStyle = fyne.TextStyle{
+		Bold: true,
+	}
+
+	loginPainelLoginSenha := widget.NewPasswordEntry()
+	loginPainelLoginSenha.PlaceHolder = "Coloque sua senha aqui"
+	//Parte da sessão do usuário
+	loginPainelSalvarSessãoCheck := widget.NewCheck("Salvar credenciais?", nil)
+	loginPainelSalvarSessãoCheck.SetChecked(true)
+
+	loginPainelSalvarSessãoAjuda := widget.NewHyperlink("O que é isso?", nil)
+	dialogSalvarSessãoTexto := widget.NewLabel(textoPainelSessão)
+	dialogSalvarSessãoTexto.Wrapping = fyne.TextWrapWord
+	loginPainelSalvarSessãoAjuda.OnTapped = func() {
+		lgnPainelSlvSajd := dialog.NewCustom("Salvar sessão - Ajuda", "Fechar", dialogSalvarSessãoTexto, alternativeOnWindow)
+		lgnPainelSlvSajd.Show()
+	}
+	loginPainelSalvarSessão := container.New(layout.NewHBoxLayout(), loginPainelSalvarSessãoCheck, loginPainelSalvarSessãoAjuda)
+	//Fim da opção de sessão
+
+	loginPainelEntrada := container.New(layout.NewVBoxLayout(), loginPainelTextoAjuda, loginPainelLoginUsuarioTexto, loginPainelLoginUsuario, loginPainelLoginSenhaTexto, loginPainelLoginSenha)
+
+	//Botão de Recuperar senha
+	loginPainelBtnEsqueciSenha := widget.NewButtonWithIcon("Recuperar senha", lockResetIcon, func() { recuperarSenha(alternativeOnWindow) })
+	loginPainelBtnEsqueciSenha.Importance = widget.MediumImportance
+	loginPainelBtnEnviar := widget.NewButtonWithIcon("Entrar", theme.LoginIcon(), func() {
+		if loginPainelLoginUsuario.Text == "" || loginPainelLoginSenha.Text == "" {
+			dialog.ShowError(errors.New("Usuário e senha não podem ficar vazios"), alternativeOnWindow)
+			return
+		}
+		userToken, err := pgo.Login(loginPainelLoginUsuario.Text, loginPainelLoginSenha.Text)
+		if err != nil {
+			dialog.ShowError(err, alternativeOnWindow)
+			return
+		}
+		oldUserToken, err := pgo.LegacyLogin(loginPainelLoginUsuario.Text, loginPainelLoginSenha.Text)
+		if err != nil {
+			dialog.ShowError(err, alternativeOnWindow)
+			return
+		}
+		userData, err := pgo.DadosUsuario(oldUserToken.AccessToken)
+		if err != nil {
+			dialog.ShowError(err, alternativeOnWindow)
+			return
+		}
+
+		if loginPainelSalvarSessãoCheck.Checked {
+			alternativeOnApp.Preferences().SetString("config_session", "yes")
+			alternativeOnApp.Preferences().SetString("username", loginPainelLoginUsuario.Text)
+			alternativeOnApp.Preferences().SetString("password", loginPainelLoginSenha.Text)
+		}
+		mudarConteudoAposLogin(alternativeOnWindow, alternativeOnApp, *userToken, *userData)
+	})
+	loginPainelBtnEnviar.Importance = widget.HighImportance
+	loginPainelBtns := container.New(layout.NewHBoxLayout(), loginPainelBtnEsqueciSenha, loginPainelBtnEnviar)
+	loginPainelEspaçador := canvas.NewLine(color.Transparent)
+	loginPainelEspaçador.StrokeWidth = 3
+
+	loginPane := container.New(layout.NewVBoxLayout(), loginPainelEntrada, loginPainelSalvarSessão, loginPainelEspaçador, loginPainelBtns)
 
 	alternativeOnWindow.SetContent(loginPane)
+	if strings.Contains(alternativeOnApp.Preferences().String("config_session"), "yes") {
+		userToken, err := pgo.Login(alternativeOnApp.Preferences().String("username"), alternativeOnApp.Preferences().String("password"))
+		if err != nil {
+			alternativeOnApp.Preferences().SetString("config_session", "")
+			fmt.Println(err)
+			main()
+			return
+		}
+		oldUserToken, err := pgo.LegacyLogin(alternativeOnApp.Preferences().String("username"), alternativeOnApp.Preferences().String("password"))
+		if err != nil {
+			alternativeOnApp.Preferences().SetString("config_session", "")
+			fmt.Println(err)
+			main()
+			return
+		}
+		userData, err := pgo.DadosUsuario(oldUserToken.AccessToken)
+		if err != nil {
+			alternativeOnApp.Preferences().SetString("config_session", "")
+			fmt.Println(err)
+			main()
+			return
+		}
+
+		alternativeOnWindow.SetTitle("Alternative On")
+		alternativeOnApp.SendNotification(fyne.NewNotification("Sessão restaurada!", "Sua sessão foi automaticamente restaurada. Para mudar isso clique em 'Fazer logout'"))
+		mudarConteudoAposLogin(alternativeOnWindow, alternativeOnApp, *userToken, *userData)
+	}
 	alternativeOnWindow.Show()
 	alternativeOnApp.Run()
 }
 
-func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, dadosUsuario pgo.Token) {
-	links := pgo.ObterRecursos(dadosUsuario.IdEscola, dadosUsuario.Token, dadosUsuario.TokenParceiro)
+func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.Token, dadosUsuario pgo.DadosPrimitivos) {
+	links := pgo.ObterRecursos(tokenUsuario.IdEscola, tokenUsuario.Token, tokenUsuario.TokenParceiro)
 
 	//UI APOS O LOGIN
 	/* Tab 1: Principal */
@@ -129,16 +176,15 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, dadosUsuario pgo.T
 	botaoAccordionLivros := widget.Button{
 		Text:     "Acessar livros",
 		Icon:     theme.DocumentIcon(),
-		OnTapped: func() { dialog.NewInformation("Cuidado...", "Função ainda não implementada", janela) },
+		OnTapped: func() { livrosUI(janela, app, tokenUsuario, dadosUsuario) },
 	}
-	botaoAccordionLivros.Disable()
 
 	containerAccordionLivros := container.NewVBox(labelAccordionLivros, &botaoAccordionLivros)
 	accordionLivros := widget.NewAccordion(
 		&widget.AccordionItem{
 			Title:  "Livros",
 			Detail: containerAccordionLivros,
-			Open:   false,
+			Open:   true,
 		},
 	)
 
@@ -163,8 +209,9 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, dadosUsuario pgo.T
 		Text: "Fazer logout",
 		Icon: theme.LogoutIcon(),
 		OnTapped: func() {
-			dialog.ShowConfirm("Você tem certeza?", "Você realmente quer sair do app?", func(b bool) {
+			dialog.ShowConfirm("Você tem certeza?", "Você realmente quer sair do app?\nIsso também encerrará sua sessão.", func(b bool) {
 				if b {
+					app.Preferences().SetString("config_session", "")
 					app.Quit()
 					os.Exit(0)
 				}
@@ -178,17 +225,23 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, dadosUsuario pgo.T
 	/* Tab 2: Conta do usuário */
 	labelTabContaPrincipal := widget.NewRichTextFromMarkdown(textoTabConta)
 	labelTabContaPrincipal.Wrapping = fyne.TextWrapWord
-	labelTabContaNomeUsuario := widget.NewLabel("Seu nome é: ???????" + " (ID: " + dadosUsuario.IdUsuario + ")") //TODO: Implementar userinfo no pgo
+	labelTabContaNomeUsuario := widget.NewLabel(fmt.Sprintf("Olá, %v!\n(ID: %v, ID legado: %v)", dadosUsuario.Nome, tokenUsuario.IdUsuario, dadosUsuario.IdUsuarioEscola)) //TODO: Implementar userinfo no pgo
 	labelTabContaNomeUsuario.Wrapping = fyne.TextWrapWord
-	labelTabContaNomeEscola := widget.NewLabel("Escola: " + dadosUsuario.NomeEscola + " (ID: " + dadosUsuario.IdEscola + ")")
+	labelTabContaNomeEscola := widget.NewLabel("Escola: " + tokenUsuario.NomeEscola + " (ID: " + tokenUsuario.IdEscola + ")")
 	labelTabContaNomeEscola.Wrapping = fyne.TextWrapWord
 	botaoTabContaMudarSenha := widget.Button{
 		Text: "Mudar senha",
-		Icon: theme.AccountIcon(),
+		Icon: lockResetIcon,
 	}
 	botaoTabContaMudarSenha.Disable()
+	labelSessãoStatus := widget.NewLabel("Sua sessão **não** está sendo salva para o usuário atual.")
+	labelSessãoStatus.Wrapping = fyne.TextWrapWord
+	if strings.Contains(app.Preferences().String("config_session"), "yes") {
+		labelSessãoStatus.Text = "Sua sessão **está** sendo salva para o usuário atual."
+		labelSessãoStatus.Refresh()
+	}
 
-	conteudoTabConta := container.New(layout.NewVBoxLayout(), labelTabContaPrincipal, labelTabContaNomeUsuario, labelTabContaNomeEscola, &botaoTabContaMudarSenha)
+	conteudoTabConta := container.New(layout.NewVBoxLayout(), labelTabContaPrincipal, labelTabContaNomeUsuario, labelTabContaNomeEscola, labelSessãoStatus, &botaoTabContaMudarSenha)
 	/* Tab 2: Conta do usuário */
 
 	/* Tab 3: Sobre */
@@ -221,4 +274,132 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, dadosUsuario pgo.T
 func parseUrl(link string) *url.URL {
 	parseLink, _ := url.Parse(link)
 	return parseLink
+}
+
+func recuperarSenha(win fyne.Window) {
+	recuperarSenhaTextoAjuda := widget.NewLabel("Informe seu e-mail, usuário ou cpf para continuar")
+	recuperarSenhaTextoEntry := widget.NewEntry()
+	recuperarSenhaTextoEntry.PlaceHolder = "CPF, E-mail ou usuário..."
+	recuperarSenhaContainer := container.New(layout.NewVBoxLayout(), recuperarSenhaTextoAjuda, recuperarSenhaTextoEntry)
+	recuperarSenhaDlg := dialog.NewCustomConfirm("Recuperar senha", "Enviar", "Fechar", recuperarSenhaContainer, func(b bool) {
+		if b {
+			ok, err := pgo.ResetarSenha(recuperarSenhaTextoEntry.Text)
+			if err != nil {
+				dialog.ShowError(err, win)
+				return
+			}
+			dialog.ShowInformation("Sucesso!", ok.Mensagem, win)
+		}
+	}, win)
+	recuperarSenhaDlg.Show()
+}
+
+func livrosUI(win fyne.Window, app fyne.App, userToken pgo.Token, oldData pgo.DadosPrimitivos) {
+	livros, err := pgo.ObterLivros(userToken.Token)
+	if err != nil {
+		dialog.ShowError(err, win)
+		return
+	}
+
+	/* BOTÕES DA INTERFACE DOS LIVROS */
+	interfaceLivrosVoltarBtn := widget.NewButtonWithIcon("Voltar", theme.NavigateBackIcon(), func() { mudarConteudoAposLogin(win, app, userToken, oldData) })
+	interfaceLivrosAjudaBtn := widget.NewButtonWithIcon("Ajuda", theme.HelpIcon(), func() {
+		ajudaTexto := widget.NewLabel(textoLivrosAjuda)
+		ajudaTexto.Wrapping = fyne.TextWrapWord
+		ajuda := dialog.NewCustom("Ajuda dos livros - Alternative On", "Fechar", ajudaTexto, win)
+		ajuda.Show()
+	})
+
+	configLivrosCaminho := widget.NewLabelWithStyle("Pasta para salvar:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+	configLivrosCaminhoLabel := widget.NewLabel("Nenhuma.")
+	configLivrosCaminhoLabel.Wrapping = fyne.TextWrapBreak
+	if app.Preferences().String("save_folder") != "" {
+		configLivrosCaminhoLabel.Text = app.Preferences().String("save_folder")
+	}
+	configLivrosBtnMudarPasta := widget.NewButtonWithIcon("Mudar pasta", theme.FolderOpenIcon(), func() {
+		pasta := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
+			if err != nil || lu == nil {
+				return
+			}
+
+			fmt.Printf("New path: %v, Old path: %v\n", lu.String(), app.Preferences().String("save_folder"))
+			app.Preferences().SetString("save_folder", lu.String())
+			configLivrosCaminhoLabel.Text = lu.Path()
+			configLivrosCaminhoLabel.Refresh()
+
+		}, win)
+		pasta.SetConfirmText("Selecionar pasta")
+		pasta.Show()
+	})
+	configLivrosBtnMudarPasta.Importance = widget.HighImportance
+	configLivrosLayout := container.NewVBox(configLivrosCaminho, configLivrosCaminhoLabel, configLivrosBtnMudarPasta)
+
+	configLivrosDlg := dialog.NewCustom("Configurações para baixar os livros", "Salvar", configLivrosLayout, win)
+	configLivrosDlgBtn := widget.NewButtonWithIcon("Configurações", theme.SettingsIcon(), func() {
+		configLivrosDlg.Show()
+	})
+	livrosCont := widget.NewLabel(fmt.Sprintf("Livros: %v", len(livros)))
+	livrosCont.Wrapping = fyne.TextWrapBreak
+	btnBar := container.NewHBox(interfaceLivrosVoltarBtn, interfaceLivrosAjudaBtn, configLivrosDlgBtn)
+
+	/* FIM DOS BOTÕES */
+
+	/*if fyne.CurrentDevice().IsMobile() {
+		dialog.ShowConfirm("Não é possivel baixar os livros", "Em celulares essa função não é suportada,\ndeseja baixar todos os livros?", func(b bool) {
+			if b {
+				configLivrosDlg.Show()
+				progress := widget.NewProgressBar()
+				dlgLivrosDowload := dialog.NewCustom("Baixando....", "Fechar", progress, win)
+				dlgLivrosDowload.Show()
+			}
+		}, win)
+	}*/
+
+	/* INICIO DOS LIVROS */
+
+	/*for _, book := range livros {
+		fmt.Println("Componente Curricular:", book.ComponenteCurricular)
+		fmt.Println("Volume:", book.Volume)
+		fmt.Println("Tipo:", book.Tipo)
+		fmt.Println("URL:", book.URL)
+		fmt.Println()
+	}*/
+
+	table := container.New(layout.NewGridLayout(4))
+	cc := widget.NewLabel("Componente Curricular")
+	cc.TextStyle = fyne.TextStyle{Bold: true}
+	vol := widget.NewLabel("Volume")
+	vol.TextStyle = fyne.TextStyle{Bold: true}
+	tipo := widget.NewLabel("Tipo")
+	tipo.TextStyle = fyne.TextStyle{Bold: true}
+	action := widget.NewLabel("Ação")
+	action.TextStyle = fyne.TextStyle{Bold: true}
+	table.Add(cc)
+	table.Add(vol)
+	table.Add(tipo)
+	table.Add(action)
+
+	for _, book := range livros {
+		table.Add(widget.NewLabel(book.ComponenteCurricular))
+		table.Add(widget.NewLabel(book.Volume))
+		table.Add(widget.NewLabel(book.Tipo))
+		table.Add(widget.NewButton("Baixar", func() {
+			win.Clipboard().SetContent("@rc0Tech")
+			app.SendNotification(fyne.NewNotification("Senha copiada!", "A senha foi copiada para a área de transferencia."))
+			app.OpenURL(parseUrl(book.URL))
+		}))
+	}
+	tableContainer := fyne.NewContainerWithLayout(layout.NewMaxLayout(), table)
+	scrollContainer := container.NewScroll(tableContainer)
+
+	// Crie um container para armazenar a tabela
+	/*content := container.NewVBox(
+		widget.NewLabel("Seus livros digitais"),
+		scrollContainer,
+	)*/
+
+	toolsBar := container.NewVBox(btnBar, livrosCont)
+	//everything := container.NewVBox(toolsBar, scrollContainer)
+	livrosInterface := container.NewBorder(toolsBar, nil, nil, nil, container.NewMax(scrollContainer))
+	win.SetContent(livrosInterface)
 }

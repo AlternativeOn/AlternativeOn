@@ -15,7 +15,7 @@ Alternative On é um projeto que visa ser um cliente alternativo a plataforma de
 
 <br> <i> </i> <!-- eu adoro html e markdown -->
 <!-- <h3> <b> ATENÇÃO: O desenvolvimento foi temporariamente pausado para que a biblioteca que comunica com a API do Positivo seja desenvolvida </b> </h3> -->
-<i> Atualmente temos o aplicativo apenas para o Windows. Em breve teremos para as outras plataformas citadas. </i>
+<i> <a href="https://github.com/alternativeon/alternativeon/releases/latest">Clique aqui para baixar o aplicativo</a> </i>
 </h4>
 
 ## Como funciona?

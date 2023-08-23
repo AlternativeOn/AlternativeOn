@@ -1,8 +1,8 @@
 Website = "https://github.com/AlternativeOn/AlternativeOn"
 
 [Details]
-  Icon = "Icon.png"
+  Icon = "assets/Icon.png"
   Name = "Alternative On"
   ID = "link.princessmortix.aon"
-  Version = "0.1.0"
-  Build = 4
+  Version = "1.0.0"
+  Build = 21

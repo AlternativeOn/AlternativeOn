@@ -16,8 +16,7 @@
 *.json
 
 # Go-winres directory
-./winres
-*.png
+winres/
 
 # Build 
 *.bat
