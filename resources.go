@@ -26,7 +26,7 @@ Atualmente é possivel:
 - Ver o nome e escola
 
 Ainda não foi adicionado a possibilidade de mudança de senha pois o servidor está retonando o erro 500 para todas as mudanças de senha.`
-var textoTabSobre = `## Alternative On - v0.1.0
+var textoTabSobre = `## Alternative On - v1.0.0-RC2
 
 Alternative On é um projeto que visa ser um cliente alternativo a plataforma de estudos Positivo On, contendo aplicativos próprios para Android, Linux e Windows.
 

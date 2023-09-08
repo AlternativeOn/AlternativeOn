@@ -1,4 +1,4 @@
-// Versão: 1.0.0-RC1 (Candidato 1)
+// Versão: 1.0.0-RC2 (Candidato 2)
 package main
 
 import (
@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -16,9 +17,13 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/alternativeon/pgo/v2"
+	"github.com/melbahja/got"
+	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 )
 
 func main() {
@@ -81,21 +86,26 @@ func main() {
 	loginPainelBtnEsqueciSenha.Importance = widget.MediumImportance
 	loginPainelBtnEnviar := widget.NewButtonWithIcon("Entrar", theme.LoginIcon(), func() {
 		if loginPainelLoginUsuario.Text == "" || loginPainelLoginSenha.Text == "" {
-			dialog.ShowError(errors.New("Usuário e senha não podem ficar vazios"), alternativeOnWindow)
+			dialog.ShowError(errors.New("usuário e senha não podem ficar vazios"), alternativeOnWindow)
 			return
 		}
+		LoginDialog := dialog.NewCustomWithoutButtons("Realizando login....", widget.NewProgressBarInfinite(), alternativeOnWindow)
+		LoginDialog.Show()
 		userToken, err := pgo.Login(loginPainelLoginUsuario.Text, loginPainelLoginSenha.Text)
 		if err != nil {
+			LoginDialog.Hide()
 			dialog.ShowError(err, alternativeOnWindow)
 			return
 		}
 		oldUserToken, err := pgo.LegacyLogin(loginPainelLoginUsuario.Text, loginPainelLoginSenha.Text)
 		if err != nil {
+			LoginDialog.Hide()
 			dialog.ShowError(err, alternativeOnWindow)
 			return
 		}
 		userData, err := pgo.DadosUsuario(oldUserToken.AccessToken)
 		if err != nil {
+			LoginDialog.Hide()
 			dialog.ShowError(err, alternativeOnWindow)
 			return
 		}
@@ -105,6 +115,7 @@ func main() {
 			alternativeOnApp.Preferences().SetString("username", loginPainelLoginUsuario.Text)
 			alternativeOnApp.Preferences().SetString("password", loginPainelLoginSenha.Text)
 		}
+		LoginDialog.Hide()
 		mudarConteudoAposLogin(alternativeOnWindow, alternativeOnApp, *userToken, *userData)
 	})
 	loginPainelBtnEnviar.Importance = widget.HighImportance
@@ -147,6 +158,8 @@ func main() {
 }
 
 func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.Token, dadosUsuario pgo.DadosPrimitivos) {
+	janela.Resize(fyne.NewSize(800, 600))
+	janela.CenterOnScreen()
 	links := pgo.ObterRecursos(tokenUsuario.IdEscola, tokenUsuario.Token, tokenUsuario.TokenParceiro)
 
 	//UI APOS O LOGIN
@@ -217,6 +230,7 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 				}
 			}, janela)
 		},
+		Importance: widget.DangerImportance,
 	}
 
 	conteudoAccordionAtividades := container.New(layout.NewVBoxLayout(), labelTabHub, accordionAtividades, accordionLivros, accordionMensagens, &botaoAccordionLogout)
@@ -256,7 +270,21 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 		Text: "Configurações do app",
 		Icon: theme.SettingsIcon(),
 	}
-	botaoTabSobreConfig.Disable()
+	botaoTabSobreConfig.OnTapped = func() {
+		btnMudarTemaClaro := widget.NewButtonWithIcon("Tema claro", theme.NewPrimaryThemedResource(resourceLightmodeSvg), func() {
+			app.Settings().SetTheme(theme.LightTheme())
+		})
+		btnMudarTemaClaro.Importance = widget.HighImportance
+		btnMudarTemaEscuro := widget.NewButtonWithIcon("Tema escuro", resourceDarkmodeSvg, func() {
+			app.Settings().SetTheme(theme.DarkTheme())
+		})
+		btnMudarTemaEscuro.Importance = widget.HighImportance
+		lblConfigApp := widget.NewLabel("Aqui você pode trocar o tema do aplicativo")
+		lblConfigApp.Wrapping = fyne.TextWrapWord
+		containerAppSettings := container.NewVBox(btnMudarTemaClaro, btnMudarTemaEscuro, lblConfigApp)
+		temaApp := dialog.NewCustom("Configurações do aplicativo", "Fechar", containerAppSettings, janela)
+		temaApp.Show()
+	}
 
 	conteudoTabSobre := container.New(layout.NewVBoxLayout(), labelTabSobre, &botaoTabSobreGH, &botaoTabSobreConfig)
 	/* Tab 3: Sobre */
@@ -303,6 +331,7 @@ func livrosUI(win fyne.Window, app fyne.App, userToken pgo.Token, oldData pgo.Da
 
 	/* BOTÕES DA INTERFACE DOS LIVROS */
 	interfaceLivrosVoltarBtn := widget.NewButtonWithIcon("Voltar", theme.NavigateBackIcon(), func() { mudarConteudoAposLogin(win, app, userToken, oldData) })
+
 	interfaceLivrosAjudaBtn := widget.NewButtonWithIcon("Ajuda", theme.HelpIcon(), func() {
 		ajudaTexto := widget.NewLabel(textoLivrosAjuda)
 		ajudaTexto.Wrapping = fyne.TextWrapWord
@@ -344,62 +373,88 @@ func livrosUI(win fyne.Window, app fyne.App, userToken pgo.Token, oldData pgo.Da
 
 	/* FIM DOS BOTÕES */
 
-	/*if fyne.CurrentDevice().IsMobile() {
-		dialog.ShowConfirm("Não é possivel baixar os livros", "Em celulares essa função não é suportada,\ndeseja baixar todos os livros?", func(b bool) {
-			if b {
-				configLivrosDlg.Show()
-				progress := widget.NewProgressBar()
-				dlgLivrosDowload := dialog.NewCustom("Baixando....", "Fechar", progress, win)
-				dlgLivrosDowload.Show()
-			}
-		}, win)
-	}*/
-
 	/* INICIO DOS LIVROS */
-
-	/*for _, book := range livros {
-		fmt.Println("Componente Curricular:", book.ComponenteCurricular)
-		fmt.Println("Volume:", book.Volume)
-		fmt.Println("Tipo:", book.Tipo)
-		fmt.Println("URL:", book.URL)
-		fmt.Println()
-	}*/
-
-	table := container.New(layout.NewGridLayout(4))
-	cc := widget.NewLabel("Componente Curricular")
-	cc.TextStyle = fyne.TextStyle{Bold: true}
-	vol := widget.NewLabel("Volume")
-	vol.TextStyle = fyne.TextStyle{Bold: true}
-	tipo := widget.NewLabel("Tipo")
-	tipo.TextStyle = fyne.TextStyle{Bold: true}
-	action := widget.NewLabel("Ação")
-	action.TextStyle = fyne.TextStyle{Bold: true}
-	table.Add(cc)
-	table.Add(vol)
-	table.Add(tipo)
-	table.Add(action)
-
-	for _, book := range livros {
-		table.Add(widget.NewLabel(book.ComponenteCurricular))
-		table.Add(widget.NewLabel(book.Volume))
-		table.Add(widget.NewLabel(book.Tipo))
-		table.Add(widget.NewButton("Baixar", func() {
-			win.Clipboard().SetContent("@rc0Tech")
-			app.SendNotification(fyne.NewNotification("Senha copiada!", "A senha foi copiada para a área de transferencia."))
-			app.OpenURL(parseUrl(book.URL))
-		}))
-	}
-	tableContainer := fyne.NewContainerWithLayout(layout.NewMaxLayout(), table)
-	scrollContainer := container.NewScroll(tableContainer)
-
-	// Crie um container para armazenar a tabela
-	/*content := container.NewVBox(
-		widget.NewLabel("Seus livros digitais"),
-		scrollContainer,
-	)*/
+	bookStartDialog := dialog.NewCustomWithoutButtons("Carregando livros....", widget.NewProgressBarInfinite(), win)
+	bookStartDialog.Show()
+	labelLivros := widget.NewLabel("Carregando seus livros... POR FAVOR AGUARDE")
+	labelLivros.Wrapping = fyne.TextWrapWord
+	hyperlinkContainer := container.NewVBox(labelLivros, widget.NewSeparator())
 
 	toolsBar := container.NewVBox(btnBar, livrosCont)
-	//everything := container.NewVBox(toolsBar, scrollContainer)
-	livrosInterface := container.NewBorder(toolsBar, nil, nil, nil, container.NewMax(scrollContainer))
+	livrosInterface := container.NewBorder(toolsBar, nil, nil, nil, container.NewScroll(hyperlinkContainer))
 	win.SetContent(livrosInterface)
+	for _, book := range livros {
+		txtLivro := widget.NewLabel(fmt.Sprintf("%v - %v (%v)", book.ComponenteCurricular, book.Volume, book.Tipo))
+		txtLivro.Wrapping = fyne.TextWrapOff
+		btnLivro := widget.NewButton("Baixar...", func() {
+			downloadPdf(book.URL, txtLivro.Text, win)
+		})
+		hAlign := container.NewHBox(btnLivro, txtLivro)
+
+		hyperlinkContainer.Add(hAlign)
+	}
+	bookStartDialog.Hide()
+	labelLivros.SetText("Baixe seus livros por aqui!")
+}
+
+func downloadPdf(url string, nome string, win fyne.Window) {
+	downloadDialog := dialog.NewCustomWithoutButtons("Baixando livro....", widget.NewProgressBarInfinite(), win)
+	downloadDialog.Show()
+	g := got.New()
+
+	tmpFile, err := os.CreateTemp("", "downloaded_*.pdf")
+	if err != nil {
+		dialog.ShowError(err, win)
+		return
+	}
+	defer tmpFile.Close()
+
+	err = g.Download(url, tmpFile.Name())
+	if err != nil {
+		dialog.ShowError(err, win)
+		return
+	}
+
+	//fmt.Println(tmpFile.Name(), url)
+	config := model.NewDefaultConfiguration()
+	config.OwnerPW = "@rc0Tech"
+	err = api.DecryptFile(tmpFile.Name(), tmpFile.Name()+"out.pdf", config)
+	if err != nil {
+		fmt.Println(err)
+		dialog.ShowError(err, win)
+		return
+	}
+	downloadDialog.Hide()
+
+	// Create a file save dialog to choose where to save the downloaded file.
+	saveDialog := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
+		if err != nil {
+			dialog.ShowError(err, win)
+			return
+		}
+		if writer == nil {
+			return
+		}
+
+		// Copy the decrypted PDF to the selected location.
+		newSrc, _ := os.Open(tmpFile.Name() + "out.pdf")
+		_, err = io.Copy(writer, newSrc)
+		if err != nil {
+			dialog.ShowError(err, win)
+			return
+		}
+
+		writer.Close()
+		os.Remove(tmpFile.Name())
+		os.Remove(tmpFile.Name() + "out.pdf")
+		dialog.ShowInformation("Pronto", "O livro foi salvo com sucesso!", win)
+
+	}, win)
+
+	// Set the default file name for the save dialog.
+	saveDialog.SetFileName(nome + ".pdf")
+	saveDialog.SetFilter(&storage.ExtensionFileFilter{Extensions: []string{".pdf"}})
+
+	// Show the save dialog.
+	saveDialog.Show()
 }
