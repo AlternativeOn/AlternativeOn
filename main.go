@@ -132,7 +132,7 @@ func main() {
 			alternativeOnApp.Preferences().SetString("config_session", "")
 			fmt.Println(err)
 			main()
-			return
+			//return
 		}
 		oldUserToken, err := pgo.LegacyLogin(alternativeOnApp.Preferences().String("username"), alternativeOnApp.Preferences().String("password"))
 		if err != nil {
@@ -170,9 +170,10 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 		Text: "Acesse suas atividades do Positivo On.",
 	}
 	botaoAccordionAtividades := widget.Button{
-		Text:     "Acessar",
-		Icon:     theme.ComputerIcon(),
-		OnTapped: func() { app.OpenURL(parseUrl(links.Studos)) },
+		Text:       "Acessar",
+		Icon:       theme.ComputerIcon(),
+		OnTapped:   func() { app.OpenURL(parseUrl(links.Studos)) },
+		Importance: widget.HighImportance,
 	}
 
 	containerAccordionAtividades := container.NewVBox(&labelAccordionAtividades, &botaoAccordionAtividades)
@@ -187,9 +188,10 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 	labelAccordionLivros := widget.NewRichTextFromMarkdown(textoFuncLivros)
 	labelAccordionLivros.Wrapping = fyne.TextWrapWord
 	botaoAccordionLivros := widget.Button{
-		Text:     "Acessar livros",
-		Icon:     theme.DocumentIcon(),
-		OnTapped: func() { livrosUI(janela, app, tokenUsuario, dadosUsuario) },
+		Text:       "Acessar livros",
+		Icon:       theme.DocumentIcon(),
+		OnTapped:   func() { livrosUI(janela, app, tokenUsuario, dadosUsuario) },
+		Importance: widget.HighImportance,
 	}
 
 	containerAccordionLivros := container.NewVBox(labelAccordionLivros, &botaoAccordionLivros)
@@ -205,9 +207,10 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 		Text: "Acesse as mensagens enviadas a você.",
 	}
 	botaoAccordionMensagens := widget.Button{
-		Text:     "Acessar",
-		Icon:     theme.FileTextIcon(),
-		OnTapped: func() { app.OpenURL(parseUrl(links.Mensagens)) },
+		Text:       "Acessar",
+		Icon:       theme.FileTextIcon(),
+		OnTapped:   func() { app.OpenURL(parseUrl(links.Mensagens)) },
+		Importance: widget.HighImportance,
 	}
 
 	containerAccordionMensagens := container.NewVBox(&labelAccordionMensagens, &botaoAccordionMensagens)
@@ -244,10 +247,35 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 	labelTabContaNomeEscola := widget.NewLabel("Escola: " + tokenUsuario.NomeEscola + " (ID: " + tokenUsuario.IdEscola + ")")
 	labelTabContaNomeEscola.Wrapping = fyne.TextWrapWord
 	botaoTabContaMudarSenha := widget.Button{
-		Text: "Mudar senha",
-		Icon: lockResetIcon,
+		Text:       "Mudar senha",
+		Icon:       lockResetIcon,
+		Importance: widget.HighImportance,
+		OnTapped: func() {
+			mudarSenhaAntigaLabel := widget.NewLabelWithStyle("Digite a antiga senha:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+			mudarSenhaAntigaEntry := widget.NewPasswordEntry()
+			mudarSenhaAntigaEntry.AcceptsTab()
+			mudarSenhaNovaLabel := widget.NewLabelWithStyle("Digite a nova senha:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+			mudarSenhaNovaEntry := widget.NewPasswordEntry()
+			mudarSenhaNovaEntry.AcceptsTab()
+			mudarSenhaNovaEntry.PlaceHolder = "Coloque uma senha forte!"
+			mudarSenhaLayout := container.NewVBox(mudarSenhaAntigaLabel, mudarSenhaAntigaEntry, mudarSenhaNovaLabel, mudarSenhaNovaEntry)
+			mudarSenhaDialog := dialog.NewCustomConfirm("Alterar senha - Alternative On", "Mudar", "Fechar", mudarSenhaLayout, func(b bool) {
+				if b {
+					resultado, err := pgo.AlterarSenha(mudarSenhaAntigaEntry.Text, mudarSenhaNovaEntry.Text, tokenUsuario.Token)
+					if err != nil {
+						dialog.ShowError(err, janela)
+						return
+					}
+					if resultado.Erro {
+						dialog.ShowInformation("Sucesso!", resultado.Mensagem, janela)
+						return
+					}
+				}
+			}, janela)
+			mudarSenhaDialog.Show()
+		},
 	}
-	botaoTabContaMudarSenha.Disable()
+
 	labelSessãoStatus := widget.NewLabel("Sua sessão **não** está sendo salva para o usuário atual.")
 	labelSessãoStatus.Wrapping = fyne.TextWrapWord
 	if strings.Contains(app.Preferences().String("config_session"), "yes") {
@@ -271,11 +299,11 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 		Icon: theme.SettingsIcon(),
 	}
 	botaoTabSobreConfig.OnTapped = func() {
-		btnMudarTemaClaro := widget.NewButtonWithIcon("Tema claro", theme.NewPrimaryThemedResource(resourceLightmodeSvg), func() {
+		btnMudarTemaClaro := widget.NewButtonWithIcon("Tema claro", theme.NewInvertedThemedResource(resourceSunSvg), func() {
 			app.Settings().SetTheme(theme.LightTheme())
 		})
 		btnMudarTemaClaro.Importance = widget.HighImportance
-		btnMudarTemaEscuro := widget.NewButtonWithIcon("Tema escuro", resourceDarkmodeSvg, func() {
+		btnMudarTemaEscuro := widget.NewButtonWithIcon("Tema escuro", theme.NewInvertedThemedResource(resourceMoonSvg), func() {
 			app.Settings().SetTheme(theme.DarkTheme())
 		})
 		btnMudarTemaEscuro.Importance = widget.HighImportance
@@ -311,7 +339,7 @@ func recuperarSenha(win fyne.Window) {
 	recuperarSenhaContainer := container.New(layout.NewVBoxLayout(), recuperarSenhaTextoAjuda, recuperarSenhaTextoEntry)
 	recuperarSenhaDlg := dialog.NewCustomConfirm("Recuperar senha", "Enviar", "Fechar", recuperarSenhaContainer, func(b bool) {
 		if b {
-			ok, err := pgo.ResetarSenha(recuperarSenhaTextoEntry.Text)
+			ok, err := pgo.RecuperarSenha(recuperarSenhaTextoEntry.Text)
 			if err != nil {
 				dialog.ShowError(err, win)
 				return
@@ -386,18 +414,26 @@ func livrosUI(win fyne.Window, app fyne.App, userToken pgo.Token, oldData pgo.Da
 	for _, book := range livros {
 		txtLivro := widget.NewLabel(fmt.Sprintf("%v - %v (%v)", book.ComponenteCurricular, book.Volume, book.Tipo))
 		txtLivro.Wrapping = fyne.TextWrapOff
-		btnLivro := widget.NewButton("Baixar...", func() {
-			downloadPdf(book.URL, txtLivro.Text, win)
-		})
-		hAlign := container.NewHBox(btnLivro, txtLivro)
 
+		linkLivro := widget.NewHyperlink("Baixar", parseUrl(book.URL))
+		linkLivro.OnTapped = func() {
+			fmt.Println("tapped!", linkLivro.URL)
+			downloadPdf(fmt.Sprint(linkLivro.URL), txtLivro.Text, win)
+		}
+		btnLivro := widget.NewButton("Baixar...", func() {
+			downloadPdf(fmt.Sprint(linkLivro.URL), txtLivro.Text, win)
+		})
+
+		hAlign := container.NewHBox(btnLivro, txtLivro)
 		hyperlinkContainer.Add(hAlign)
 	}
+	fmt.Println(len(livros))
 	bookStartDialog.Hide()
 	labelLivros.SetText("Baixe seus livros por aqui!")
 }
 
 func downloadPdf(url string, nome string, win fyne.Window) {
+	fmt.Println(url)
 	downloadDialog := dialog.NewCustomWithoutButtons("Baixando livro....", widget.NewProgressBarInfinite(), win)
 	downloadDialog.Show()
 	g := got.New()
@@ -405,6 +441,7 @@ func downloadPdf(url string, nome string, win fyne.Window) {
 	tmpFile, err := os.CreateTemp("", "downloaded_*.pdf")
 	if err != nil {
 		dialog.ShowError(err, win)
+		downloadDialog.Hide()
 		return
 	}
 	defer tmpFile.Close()
@@ -412,6 +449,7 @@ func downloadPdf(url string, nome string, win fyne.Window) {
 	err = g.Download(url, tmpFile.Name())
 	if err != nil {
 		dialog.ShowError(err, win)
+		downloadDialog.Hide()
 		return
 	}
 
@@ -421,7 +459,40 @@ func downloadPdf(url string, nome string, win fyne.Window) {
 	err = api.DecryptFile(tmpFile.Name(), tmpFile.Name()+"out.pdf", config)
 	if err != nil {
 		fmt.Println(err)
-		dialog.ShowError(err, win)
+		downloadDialog.Hide()
+		dialog.ShowError(errors.New(err.Error()+"\nO Arquivo foi salvo com senha!"), win)
+		saveDialog := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
+			if err != nil {
+				dialog.ShowError(err, win)
+				return
+			}
+			if writer == nil {
+				return
+			}
+
+			_ = os.Rename(tmpFile.Name(), tmpFile.Name()+"-senha=@rc0Tech.pdf")
+			newSrc, _ := os.Open(tmpFile.Name() + "-senha=@rc0Tech.pdf")
+			_, err = io.Copy(writer, newSrc)
+			if err != nil {
+				dialog.ShowError(err, win)
+				return
+			}
+
+			writer.Close()
+			os.Remove(tmpFile.Name())
+			os.Remove(tmpFile.Name() + "-senha=@rc0Tech.pdf")
+			dialog.ShowInformation("Pronto", "O livro foi salvo com sucesso!", win)
+
+		}, win)
+
+		// Set the default file name for the save dialog.
+		saveDialog.SetFileName(nome + "-senha=@rc0Tech.pdf")
+		saveDialog.SetFilter(&storage.ExtensionFileFilter{Extensions: []string{".pdf"}})
+		saveDialog.SetConfirmText("Salvar")
+		saveDialog.SetDismissText("Fechar")
+
+		// Show the save dialog.
+		saveDialog.Show()
 		return
 	}
 	downloadDialog.Hide()
@@ -454,6 +525,8 @@ func downloadPdf(url string, nome string, win fyne.Window) {
 	// Set the default file name for the save dialog.
 	saveDialog.SetFileName(nome + ".pdf")
 	saveDialog.SetFilter(&storage.ExtensionFileFilter{Extensions: []string{".pdf"}})
+	saveDialog.SetConfirmText("Salvar")
+	saveDialog.SetDismissText("Fechar")
 
 	// Show the save dialog.
 	saveDialog.Show()
