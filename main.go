@@ -1,4 +1,4 @@
-// Versão: 1.0.0-RC2 (Candidato 2)
+// Versão: 1.0.0-RC3 (Candidato 3)
 package main
 
 import (
@@ -290,13 +290,15 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 	labelTabSobre := widget.NewRichTextFromMarkdown(textoTabSobre)
 	labelTabSobre.Wrapping = fyne.TextWrapWord
 	botaoTabSobreGH := widget.Button{
-		Text:     "Ir para a página do projeto",
-		Icon:     theme.ComputerIcon(),
-		OnTapped: func() { app.OpenURL(parseUrl("https://github.com/AlternativeOn/AlternativeOn")) },
+		Text:       "Ir para a página do projeto",
+		Icon:       theme.ComputerIcon(),
+		OnTapped:   func() { app.OpenURL(parseUrl("https://github.com/AlternativeOn/AlternativeOn")) },
+		Importance: widget.HighImportance,
 	}
 	botaoTabSobreConfig := widget.Button{
-		Text: "Configurações do app",
-		Icon: theme.SettingsIcon(),
+		Text:       "Configurações do app",
+		Icon:       theme.SettingsIcon(),
+		Importance: widget.MediumImportance,
 	}
 	botaoTabSobreConfig.OnTapped = func() {
 		btnMudarTemaClaro := widget.NewButtonWithIcon("Tema claro", theme.NewInvertedThemedResource(resourceSunSvg), func() {
