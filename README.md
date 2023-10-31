@@ -2,21 +2,20 @@
 <a href="https://github.com/alternativeon/alternativeon/releases/latest">AlternativeOn</a>
 </h1>
 
-<p align="center">
+<div align="center"> <p>
 <img src="https://img.shields.io/badge/desenvolvimento-ativo-success?style=for-the-badge&logo=github">
-<img src="https://img.shields.io/badge/versão-windows-success?style=for-the-badge&logo=windows">
-<img src="https://img.shields.io/badge/versão-linux-critical?style=for-the-badge&logo=linux">
-<img src="https://img.shields.io/badge/versão-android-critical?style=for-the-badge&logo=android">
 <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/alternativeon/alternativeon/total?style=for-the-badge">
 </p>
+  
+|    **Baixe Aqui**    |               **Plataforma**              |
+|:-----------------:|:----------------------------------------:|
+| ![GitHub release (by tag)](https://img.shields.io/github/downloads/alternativeon/alternativeon/latest/total?style=for-the-badge&logo=windows10&logoColor=blue&label=Baixar%20-%20Windows&color=success&link=https%3A%2F%2Fgithub.com%2FAlternativeOn%2FAlternativeOn%2Freleases%2Fdownload%2Fv1.0.0%2FAlternative_On.exe) | Windows |
+| ![GitHub release (by tag)](https://img.shields.io/github/downloads/alternativeon/alternativeon/latest/total?style=for-the-badge&logo=android&logoColor=green&label=Baixar%20-%20Windows&color=success&link=https%3A%2F%2Fgithub.com%2FAlternativeOn%2FAlternativeOn%2Freleases%2Fdownload%2Fv1.0.0%2FAlternative_On.apk) |  Android  |
 
-<h4 align="left"> 
-Alternative On é um projeto que visa ser um cliente alternativo a plataforma de estudos <a href="https://positivoon.com.br" target="_blank"> Positivo On</a>, contendo aplicativos próprios para Android, Linux e Windows.
+</div>
 
-<br> <i> </i> <!-- eu adoro html e markdown -->
-<!-- <h3> <b> ATENÇÃO: O desenvolvimento foi temporariamente pausado para que a biblioteca que comunica com a API do Positivo seja desenvolvida </b> </h3> -->
-<i> <a href="https://github.com/alternativeon/alternativeon/releases/latest">Clique aqui para baixar o aplicativo</a> </i>
-</h4>
+
+**Alternative On é um projeto que visa ser um cliente alternativo a plataforma de estudos <a href="https://positivoon.com.br" target="_blank"> Positivo On</a>, contendo aplicativos próprios para Android, Linux e Windows.**
 
 ## Como funciona?
 
