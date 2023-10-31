@@ -33,9 +33,29 @@ Também nós não iremos coletar nenhum dado de você, nem mesmo seu usuário, s
 
 Infelizmente, certas soluções precisam ser carregadas apenas no site do Positivo. Estamos trabalhando numa solução para isso!
 
-### Por que a versão para celular demora tanto pra sair?
+### Imagens do projeto
 
-Este projeto é minha primeira vez fazendo um aplicativo para celulares, portanto, caso saiba programar ou conheça alguem que saiba, venha fazer uma pull request :). Recomendamos fortemente que leia a seção [Contribuindo](#Contribuindo).
+<figure>
+    <img src="https://github.com/AlternativeOn/AlternativeOn/assets/47502554/e9f3ed1d-b65f-4af3-8fd5-f37cbee290f2"
+         alt="Login">
+    <figcaption><i><br>Login no app</i></figcaption>
+</figure>
+
+<br> <br>
+
+<figure>
+    <img src="https://github.com/AlternativeOn/AlternativeOn/assets/47502554/c86f024d-ce9c-4007-8fc9-0d36c293a32c"
+         alt="Login">
+    <figcaption><i><br>Tema Claro</i></figcaption>
+</figure>
+
+<br> <br>
+
+<figure>
+    <img src="https://github.com/AlternativeOn/AlternativeOn/assets/47502554/2a9e00b1-5951-4751-b846-d2a5b77cc6c0"
+         alt="Login">
+    <figcaption><i><br>e Escuro!</i></figcaption>
+</figure>
 
 ### Achei um bug! Como reporto ele?
 
