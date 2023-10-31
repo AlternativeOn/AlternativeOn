@@ -3,7 +3,7 @@ module github.com/alternativeon/alternativeon
 go 1.20
 
 require (
-	fyne.io/fyne/v2 v2.4.0
+	fyne.io/fyne/v2 v2.4.1
 	github.com/alternativeon/pgo/v2 v2.2.0
 	github.com/melbahja/got v0.7.0
 	github.com/pdfcpu/pdfcpu v0.5.0

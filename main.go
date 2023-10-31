@@ -1,4 +1,4 @@
-// Versão: 1.0.0-RC3 (Candidato 3)
+// Versão: 1.0.0
 package main
 
 import (
@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"image/color"
 	"io"
-	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -26,6 +26,10 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 )
 
+var TokenData pgo.Token
+var TokenDataPrimitivo pgo.DadosPrimitivos
+var LivrosData []pgo.Item
+
 func main() {
 	//Inicialização da UI
 	alternativeOnApp := app.NewWithID("link.princessmortix.aon")
@@ -40,13 +44,11 @@ func main() {
 	}
 	app.SetMetadata(alternativeOnMetadata)
 
-	//Sessão do usuário
-	fmt.Println(strings.Contains(alternativeOnApp.Preferences().String("config_session"), "yes"))
+	//Sessão do usuário - Verificação nas configurações
 	if alternativeOnApp.Preferences().String("config_session") == "" {
 		alternativeOnApp.Preferences().SetString("username", "")
 		alternativeOnApp.Preferences().SetString("password", "")
 	}
-	//Sessão do usuário
 
 	//Login do usuário
 	loginPainelTextoAjuda := widget.NewRichTextFromMarkdown(textoPainelLogin)
@@ -76,10 +78,10 @@ func main() {
 		lgnPainelSlvSajd := dialog.NewCustom("Salvar sessão - Ajuda", "Fechar", dialogSalvarSessãoTexto, alternativeOnWindow)
 		lgnPainelSlvSajd.Show()
 	}
-	loginPainelSalvarSessão := container.New(layout.NewHBoxLayout(), loginPainelSalvarSessãoCheck, loginPainelSalvarSessãoAjuda)
+	loginPainelSalvarSessão := container.NewHBox(loginPainelSalvarSessãoCheck, loginPainelSalvarSessãoAjuda)
 	//Fim da opção de sessão
 
-	loginPainelEntrada := container.New(layout.NewVBoxLayout(), loginPainelTextoAjuda, loginPainelLoginUsuarioTexto, loginPainelLoginUsuario, loginPainelLoginSenhaTexto, loginPainelLoginSenha)
+	loginPainelEntrada := container.NewVBox(loginPainelTextoAjuda, loginPainelLoginUsuarioTexto, loginPainelLoginUsuario, loginPainelLoginSenhaTexto, loginPainelLoginSenha)
 
 	//Botão de Recuperar senha
 	loginPainelBtnEsqueciSenha := widget.NewButtonWithIcon("Recuperar senha", lockResetIcon, func() { recuperarSenha(alternativeOnWindow) })
@@ -116,51 +118,54 @@ func main() {
 			alternativeOnApp.Preferences().SetString("password", loginPainelLoginSenha.Text)
 		}
 		LoginDialog.Hide()
-		mudarConteudoAposLogin(alternativeOnWindow, alternativeOnApp, *userToken, *userData)
+		TokenData = *userToken
+		TokenDataPrimitivo = *userData
+		interfacePrincipal(alternativeOnWindow, alternativeOnApp)
 	})
 	loginPainelBtnEnviar.Importance = widget.HighImportance
-	loginPainelBtns := container.New(layout.NewHBoxLayout(), loginPainelBtnEsqueciSenha, loginPainelBtnEnviar)
+	loginPainelBtns := container.NewHBox(loginPainelBtnEsqueciSenha, loginPainelBtnEnviar)
 	loginPainelEspaçador := canvas.NewLine(color.Transparent)
 	loginPainelEspaçador.StrokeWidth = 3
 
-	loginPane := container.New(layout.NewVBoxLayout(), loginPainelEntrada, loginPainelSalvarSessão, loginPainelEspaçador, loginPainelBtns)
+	loginPane := container.NewVBox(loginPainelEntrada, loginPainelSalvarSessão, loginPainelEspaçador, loginPainelBtns)
 
 	alternativeOnWindow.SetContent(loginPane)
+
 	if strings.Contains(alternativeOnApp.Preferences().String("config_session"), "yes") {
 		userToken, err := pgo.Login(alternativeOnApp.Preferences().String("username"), alternativeOnApp.Preferences().String("password"))
 		if err != nil {
 			alternativeOnApp.Preferences().SetString("config_session", "")
 			fmt.Println(err)
 			main()
-			//return
 		}
 		oldUserToken, err := pgo.LegacyLogin(alternativeOnApp.Preferences().String("username"), alternativeOnApp.Preferences().String("password"))
 		if err != nil {
 			alternativeOnApp.Preferences().SetString("config_session", "")
 			fmt.Println(err)
 			main()
-			return
 		}
 		userData, err := pgo.DadosUsuario(oldUserToken.AccessToken)
 		if err != nil {
 			alternativeOnApp.Preferences().SetString("config_session", "")
 			fmt.Println(err)
 			main()
-			return
 		}
 
 		alternativeOnWindow.SetTitle("Alternative On")
-		alternativeOnApp.SendNotification(fyne.NewNotification("Sessão restaurada!", "Sua sessão foi automaticamente restaurada. Para mudar isso clique em 'Fazer logout'"))
-		mudarConteudoAposLogin(alternativeOnWindow, alternativeOnApp, *userToken, *userData)
+		alternativeOnApp.SendNotification(fyne.NewNotification("Sessão restaurada!", "Sua sessão foi automaticamente restaurada. Para mudar isso clique em 'Sair'."))
+		TokenData = *userToken
+		TokenDataPrimitivo = *userData
+		interfacePrincipal(alternativeOnWindow, alternativeOnApp)
 	}
 	alternativeOnWindow.Show()
 	alternativeOnApp.Run()
 }
 
-func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.Token, dadosUsuario pgo.DadosPrimitivos) {
+func interfacePrincipal(janela fyne.Window, app fyne.App) {
 	janela.Resize(fyne.NewSize(800, 600))
 	janela.CenterOnScreen()
-	links := pgo.ObterRecursos(tokenUsuario.IdEscola, tokenUsuario.Token, tokenUsuario.TokenParceiro)
+
+	links := pgo.ObterRecursos(TokenData.IdEscola, TokenData.Token, TokenData.TokenParceiro)
 
 	//UI APOS O LOGIN
 	/* Tab 1: Principal */
@@ -170,8 +175,8 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 		Text: "Acesse suas atividades do Positivo On.",
 	}
 	botaoAccordionAtividades := widget.Button{
-		Text:       "Acessar",
-		Icon:       theme.ComputerIcon(),
+		Text:       "Ver atividades",
+		Icon:       theme.NewThemedResource(resourceHistoryeduSvg),
 		OnTapped:   func() { app.OpenURL(parseUrl(links.Studos)) },
 		Importance: widget.HighImportance,
 	}
@@ -188,9 +193,24 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 	labelAccordionLivros := widget.NewRichTextFromMarkdown(textoFuncLivros)
 	labelAccordionLivros.Wrapping = fyne.TextWrapWord
 	botaoAccordionLivros := widget.Button{
-		Text:       "Acessar livros",
-		Icon:       theme.DocumentIcon(),
-		OnTapped:   func() { livrosUI(janela, app, tokenUsuario, dadosUsuario) },
+		Text: "Visualizar livros",
+		Icon: theme.NewThemedResource(resourceBookSvg),
+		OnTapped: func() {
+			labelQuestão := widget.NewLabel("Você quer vizualizar seus livros, ou baixar todos eles?")
+			labelQuestão.Wrapping = fyne.TextWrapWord
+
+			questãoVerOuBaixar := dialog.NewCustomWithoutButtons("Ver/Baixar livros", labelQuestão, janela)
+			btnVerTodos := widget.NewButton("Vizualizar livros", func() {
+				interfaceLivros(janela, app)
+				questãoVerOuBaixar.Hide()
+			})
+			btnBaixarTodos := widget.NewButton("Baixar livros", func() {
+				interfaceBaixarTudo(app, janela)
+				questãoVerOuBaixar.Hide()
+			})
+			questãoVerOuBaixar.SetButtons([]fyne.CanvasObject{btnVerTodos, btnBaixarTodos})
+			questãoVerOuBaixar.Show()
+		},
 		Importance: widget.HighImportance,
 	}
 
@@ -204,11 +224,11 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 	)
 
 	labelAccordionMensagens := widget.Label{
-		Text: "Acesse as mensagens enviadas a você.",
+		Text: "Leia as mensagens enviadas a você.",
 	}
 	botaoAccordionMensagens := widget.Button{
-		Text:       "Acessar",
-		Icon:       theme.FileTextIcon(),
+		Text:       "Ler mensagens",
+		Icon:       theme.NewThemedResource(resourceChatSvg),
 		OnTapped:   func() { app.OpenURL(parseUrl(links.Mensagens)) },
 		Importance: widget.HighImportance,
 	}
@@ -216,19 +236,18 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 	containerAccordionMensagens := container.NewVBox(&labelAccordionMensagens, &botaoAccordionMensagens)
 	accordionMensagens := widget.NewAccordion(
 		&widget.AccordionItem{
-			Title:  "Ver Mensagens",
+			Title:  "Mensagens",
 			Detail: containerAccordionMensagens,
 			Open:   true,
 		},
 	)
 	botaoAccordionLogout := widget.Button{
-		Text: "Fazer logout",
-		Icon: theme.LogoutIcon(),
+		Text: "Sair",
+		Icon: theme.NewThemedResource(resourceLogoutSvg),
 		OnTapped: func() {
 			dialog.ShowConfirm("Você tem certeza?", "Você realmente quer sair do app?\nIsso também encerrará sua sessão.", func(b bool) {
 				if b {
 					app.Preferences().SetString("config_session", "")
-					app.Quit()
 					os.Exit(0)
 				}
 			}, janela)
@@ -242,9 +261,9 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 	/* Tab 2: Conta do usuário */
 	labelTabContaPrincipal := widget.NewRichTextFromMarkdown(textoTabConta)
 	labelTabContaPrincipal.Wrapping = fyne.TextWrapWord
-	labelTabContaNomeUsuario := widget.NewLabel(fmt.Sprintf("Olá, %v!\n(ID: %v, ID legado: %v)", dadosUsuario.Nome, tokenUsuario.IdUsuario, dadosUsuario.IdUsuarioEscola)) //TODO: Implementar userinfo no pgo
+	labelTabContaNomeUsuario := widget.NewLabel(fmt.Sprintf("Olá, %v!\n(ID: %v, ID legado: %v)", TokenDataPrimitivo.Nome, TokenData.IdUsuario, TokenDataPrimitivo.IdUsuarioEscola)) //TODO: Implementar userinfo no pgo
 	labelTabContaNomeUsuario.Wrapping = fyne.TextWrapWord
-	labelTabContaNomeEscola := widget.NewLabel("Escola: " + tokenUsuario.NomeEscola + " (ID: " + tokenUsuario.IdEscola + ")")
+	labelTabContaNomeEscola := widget.NewLabel("Escola: " + TokenData.NomeEscola + " (ID: " + TokenData.IdEscola + ")")
 	labelTabContaNomeEscola.Wrapping = fyne.TextWrapWord
 	botaoTabContaMudarSenha := widget.Button{
 		Text:       "Mudar senha",
@@ -261,7 +280,7 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 			mudarSenhaLayout := container.NewVBox(mudarSenhaAntigaLabel, mudarSenhaAntigaEntry, mudarSenhaNovaLabel, mudarSenhaNovaEntry)
 			mudarSenhaDialog := dialog.NewCustomConfirm("Alterar senha - Alternative On", "Mudar", "Fechar", mudarSenhaLayout, func(b bool) {
 				if b {
-					resultado, err := pgo.AlterarSenha(mudarSenhaAntigaEntry.Text, mudarSenhaNovaEntry.Text, tokenUsuario.Token)
+					resultado, err := pgo.AlterarSenha(mudarSenhaAntigaEntry.Text, mudarSenhaNovaEntry.Text, TokenData.Token)
 					if err != nil {
 						dialog.ShowError(err, janela)
 						return
@@ -272,6 +291,7 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 					}
 				}
 			}, janela)
+
 			mudarSenhaDialog.Show()
 		},
 	}
@@ -301,11 +321,11 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 		Importance: widget.MediumImportance,
 	}
 	botaoTabSobreConfig.OnTapped = func() {
-		btnMudarTemaClaro := widget.NewButtonWithIcon("Tema claro", theme.NewInvertedThemedResource(resourceSunSvg), func() {
+		btnMudarTemaClaro := widget.NewButtonWithIcon("Tema claro", theme.NewInvertedThemedResource(resourceLightmodeSvg), func() {
 			app.Settings().SetTheme(theme.LightTheme())
 		})
 		btnMudarTemaClaro.Importance = widget.HighImportance
-		btnMudarTemaEscuro := widget.NewButtonWithIcon("Tema escuro", theme.NewInvertedThemedResource(resourceMoonSvg), func() {
+		btnMudarTemaEscuro := widget.NewButtonWithIcon("Tema escuro", theme.NewInvertedThemedResource(resourceDarkmodeSvg), func() {
 			app.Settings().SetTheme(theme.DarkTheme())
 		})
 		btnMudarTemaEscuro.Importance = widget.HighImportance
@@ -322,45 +342,29 @@ func mudarConteudoAposLogin(janela fyne.Window, app fyne.App, tokenUsuario pgo.T
 	abasUiAposLogin := container.NewAppTabs(
 		container.NewTabItemWithIcon("Hub", theme.HomeIcon(), conteudoAccordionAtividades),
 		container.NewTabItemWithIcon("Conta", theme.AccountIcon(), conteudoTabConta),
-		container.NewTabItemWithIcon("Sobre", theme.InfoIcon(), conteudoTabSobre),
+		container.NewTabItemWithIcon("Sobre", theme.NewThemedResource(resourceInfoSvg), conteudoTabSobre),
 	)
-	abasUiAposLogin.SetTabLocation(container.TabLocationLeading)
+	abasUiAposLogin.SetTabLocation(container.TabLocationTop)
+	livros, err := pgo.ObterLivros(TokenData.Token)
+	if err != nil {
+		dialog.ShowError(err, janela)
+		return
+	}
+	LivrosData = livros
 
 	janela.SetContent(abasUiAposLogin)
 }
 
-func parseUrl(link string) *url.URL {
-	parseLink, _ := url.Parse(link)
-	return parseLink
-}
-
-func recuperarSenha(win fyne.Window) {
-	recuperarSenhaTextoAjuda := widget.NewLabel("Informe seu e-mail, usuário ou cpf para continuar")
-	recuperarSenhaTextoEntry := widget.NewEntry()
-	recuperarSenhaTextoEntry.PlaceHolder = "CPF, E-mail ou usuário..."
-	recuperarSenhaContainer := container.New(layout.NewVBoxLayout(), recuperarSenhaTextoAjuda, recuperarSenhaTextoEntry)
-	recuperarSenhaDlg := dialog.NewCustomConfirm("Recuperar senha", "Enviar", "Fechar", recuperarSenhaContainer, func(b bool) {
-		if b {
-			ok, err := pgo.RecuperarSenha(recuperarSenhaTextoEntry.Text)
-			if err != nil {
-				dialog.ShowError(err, win)
-				return
-			}
-			dialog.ShowInformation("Sucesso!", ok.Mensagem, win)
-		}
-	}, win)
-	recuperarSenhaDlg.Show()
-}
-
-func livrosUI(win fyne.Window, app fyne.App, userToken pgo.Token, oldData pgo.DadosPrimitivos) {
-	livros, err := pgo.ObterLivros(userToken.Token)
+func interfaceLivros(win fyne.Window, app fyne.App) {
+	livros, err := pgo.ObterLivros(TokenData.Token)
 	if err != nil {
 		dialog.ShowError(err, win)
 		return
 	}
+	LivrosData = livros
 
 	/* BOTÕES DA INTERFACE DOS LIVROS */
-	interfaceLivrosVoltarBtn := widget.NewButtonWithIcon("Voltar", theme.NavigateBackIcon(), func() { mudarConteudoAposLogin(win, app, userToken, oldData) })
+	interfaceLivrosVoltarBtn := widget.NewButtonWithIcon("Voltar", theme.NavigateBackIcon(), func() { interfacePrincipal(win, app) })
 
 	interfaceLivrosAjudaBtn := widget.NewButtonWithIcon("Ajuda", theme.HelpIcon(), func() {
 		ajudaTexto := widget.NewLabel(textoLivrosAjuda)
@@ -369,37 +373,10 @@ func livrosUI(win fyne.Window, app fyne.App, userToken pgo.Token, oldData pgo.Da
 		ajuda.Show()
 	})
 
-	configLivrosCaminho := widget.NewLabelWithStyle("Pasta para salvar:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
-	configLivrosCaminhoLabel := widget.NewLabel("Nenhuma.")
-	configLivrosCaminhoLabel.Wrapping = fyne.TextWrapBreak
-	if app.Preferences().String("save_folder") != "" {
-		configLivrosCaminhoLabel.Text = app.Preferences().String("save_folder")
-	}
-	configLivrosBtnMudarPasta := widget.NewButtonWithIcon("Mudar pasta", theme.FolderOpenIcon(), func() {
-		pasta := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
-			if err != nil || lu == nil {
-				return
-			}
-
-			fmt.Printf("New path: %v, Old path: %v\n", lu.String(), app.Preferences().String("save_folder"))
-			app.Preferences().SetString("save_folder", lu.String())
-			configLivrosCaminhoLabel.Text = lu.Path()
-			configLivrosCaminhoLabel.Refresh()
-
-		}, win)
-		pasta.SetConfirmText("Selecionar pasta")
-		pasta.Show()
-	})
-	configLivrosBtnMudarPasta.Importance = widget.HighImportance
-	configLivrosLayout := container.NewVBox(configLivrosCaminho, configLivrosCaminhoLabel, configLivrosBtnMudarPasta)
-
-	configLivrosDlg := dialog.NewCustom("Configurações para baixar os livros", "Salvar", configLivrosLayout, win)
-	configLivrosDlgBtn := widget.NewButtonWithIcon("Configurações", theme.SettingsIcon(), func() {
-		configLivrosDlg.Show()
-	})
 	livrosCont := widget.NewLabel(fmt.Sprintf("Livros: %v", len(livros)))
 	livrosCont.Wrapping = fyne.TextWrapBreak
-	btnBar := container.NewHBox(interfaceLivrosVoltarBtn, interfaceLivrosAjudaBtn, configLivrosDlgBtn)
+
+	btnBar := container.NewHBox(interfaceLivrosVoltarBtn, interfaceLivrosAjudaBtn)
 
 	/* FIM DOS BOTÕES */
 
@@ -413,6 +390,7 @@ func livrosUI(win fyne.Window, app fyne.App, userToken pgo.Token, oldData pgo.Da
 	toolsBar := container.NewVBox(btnBar, livrosCont)
 	livrosInterface := container.NewBorder(toolsBar, nil, nil, nil, container.NewScroll(hyperlinkContainer))
 	win.SetContent(livrosInterface)
+
 	for _, book := range livros {
 		txtLivro := widget.NewLabel(fmt.Sprintf("%v - %v (%v)", book.ComponenteCurricular, book.Volume, book.Tipo))
 		txtLivro.Wrapping = fyne.TextWrapOff
@@ -422,7 +400,7 @@ func livrosUI(win fyne.Window, app fyne.App, userToken pgo.Token, oldData pgo.Da
 			fmt.Println("tapped!", linkLivro.URL)
 			downloadPdf(fmt.Sprint(linkLivro.URL), txtLivro.Text, win)
 		}
-		btnLivro := widget.NewButton("Baixar...", func() {
+		btnLivro := widget.NewButtonWithIcon("", theme.NewThemedResource(resourceDownloadsingleSvg), func() {
 			downloadPdf(fmt.Sprint(linkLivro.URL), txtLivro.Text, win)
 		})
 
@@ -434,8 +412,114 @@ func livrosUI(win fyne.Window, app fyne.App, userToken pgo.Token, oldData pgo.Da
 	labelLivros.SetText("Baixe seus livros por aqui!")
 }
 
+func interfaceBaixarTudo(app fyne.App, win fyne.Window) {
+	btnVoltarInterfaceBaixarTudo := widget.NewButtonWithIcon("Voltar ao início", theme.NavigateBackIcon(), func() {
+		interfacePrincipal(win, app)
+	})
+	btnVoltarInterfaceBaixarTudo.Importance = widget.HighImportance
+
+	labelInterfaceBaixarTudo := widget.NewLabel(textoInterfaceBaixarTudo)
+	labelInterfaceBaixarTudo.Wrapping = fyne.TextWrapWord
+	labelStatusInterfaceBaixarTudo := widget.NewLabel("Status: Esperando o usuário escolher uma pasta...")
+	labelStatusInterfaceBaixarTudo.Wrapping = fyne.TextWrapWord
+
+	status := func(s string) {
+		labelStatusInterfaceBaixarTudo.SetText(s)
+	}
+
+	barraInterfaceBaixarTudo := widget.NewProgressBar()
+	totalLivros := len(LivrosData)
+	barraInterfaceBaixarTudo.Max = float64(totalLivros)
+	barraInterfaceBaixarTudo.Min = 1.
+	barraInterfaceBaixarTudo.SetValue(1)
+
+	//var SalvarPara fyne.ListableURI
+
+	btnIniciarDownload := widget.NewButtonWithIcon("Iniciar download", theme.NewThemedResource(resourceDownloadSvg), nil)
+	btnIniciarDownload.Disable()
+	dlgSalvarLivros := dialog.NewFolderOpen(func(lu fyne.ListableURI, err error) {
+		if err != nil {
+			dialog.ShowError(err, win)
+			return
+		}
+		if lu == nil {
+			return
+		}
+
+		dialog.ShowInformation("Sir", lu.Path(), win)
+		btnIniciarDownload.Enable()
+		app.Preferences().SetString("path", lu.Path())
+		//SalvarPara = lu
+	}, win)
+	dlgSalvarLivros.SetConfirmText("Selecionar")
+	dlgSalvarLivros.SetDismissText("Cancelar")
+
+	btnEscolherPasta := widget.NewButtonWithIcon("Escolher pasta", theme.FolderOpenIcon(), func() {
+		dlgSalvarLivros.Show()
+	})
+	btnEscolherPasta.Importance = widget.SuccessImportance
+
+	btnIniciarDownload.OnTapped = func() {
+		btnVoltarInterfaceBaixarTudo.Disable()
+		btnIniciarDownload.Disable()
+		btnEscolherPasta.Disable()
+		downloadPath := app.Preferences().String("path")
+		fmt.Println(downloadPath)
+
+		status(fmt.Sprintf("Baixando livros... (0/%v)", totalLivros))
+
+		g := got.New()
+
+		nãoBaixados := make([]string, 0)
+
+		for baixados, book := range LivrosData {
+			caminho := fmt.Sprintf("%v/%v - %v - %v [%v].pdf", downloadPath, book.ComponenteCurricular, book.Volume, book.Serie, book.Tipo)
+
+			err := g.Download(book.URL, caminho)
+			if err != nil {
+				dialog.ShowError(err, win)
+				btnVoltarInterfaceBaixarTudo.Enable()
+				btnIniciarDownload.Enable()
+				btnEscolherPasta.Enable()
+				status("Download falhou, Motivo: " + err.Error())
+				break
+			}
+
+			config := model.NewDefaultConfiguration()
+			config.DecodeAllStreams = true
+
+			config.OwnerPW = "@rc0Tech"
+			err = api.DecryptFile(caminho, caminho, config)
+			if err != nil {
+				fmt.Println(err)
+				status("Falha ao processar arquivo: " + err.Error())
+				nãoBaixados = append(nãoBaixados, filepath.Base(caminho))
+			}
+
+			barraInterfaceBaixarTudo.Value++
+			barraInterfaceBaixarTudo.Refresh()
+			status(fmt.Sprintf("Baixando livros... Seja paciente :)\nBaixados/Total: %v/%v", baixados, totalLivros))
+		}
+
+		status("Todos os livros baixados com sucesso.")
+		btnVoltarInterfaceBaixarTudo.Enable()
+		btnIniciarDownload.Enable()
+		btnEscolherPasta.Enable()
+
+		if len(nãoBaixados) > 0 {
+			status(fmt.Sprintf("Não foi possível processar %v arquivos.\nDownload finalizado\nSe necessário, utilize a senha @rc0Tech (já copiada para a área de transferencia)", len(nãoBaixados)))
+			win.Clipboard().SetContent("@rc0Tech")
+		}
+	}
+
+	btnBar := container.NewHBox(btnVoltarInterfaceBaixarTudo, widget.NewSeparator())
+	botoes := container.NewHBox(btnEscolherPasta, btnIniciarDownload)
+	resto := container.NewVBox(labelInterfaceBaixarTudo, barraInterfaceBaixarTudo, widget.NewSeparator(), botoes, widget.NewSeparator(), labelStatusInterfaceBaixarTudo)
+	tudo := container.NewBorder(btnBar, nil, nil, nil, resto)
+	win.SetContent(tudo)
+}
+
 func downloadPdf(url string, nome string, win fyne.Window) {
-	fmt.Println(url)
 	downloadDialog := dialog.NewCustomWithoutButtons("Baixando livro....", widget.NewProgressBarInfinite(), win)
 	downloadDialog.Show()
 	g := got.New()
@@ -455,7 +539,6 @@ func downloadPdf(url string, nome string, win fyne.Window) {
 		return
 	}
 
-	//fmt.Println(tmpFile.Name(), url)
 	config := model.NewDefaultConfiguration()
 	config.OwnerPW = "@rc0Tech"
 	err = api.DecryptFile(tmpFile.Name(), tmpFile.Name()+"out.pdf", config)
@@ -487,13 +570,10 @@ func downloadPdf(url string, nome string, win fyne.Window) {
 
 		}, win)
 
-		// Set the default file name for the save dialog.
 		saveDialog.SetFileName(nome + "-senha=@rc0Tech.pdf")
 		saveDialog.SetFilter(&storage.ExtensionFileFilter{Extensions: []string{".pdf"}})
 		saveDialog.SetConfirmText("Salvar")
 		saveDialog.SetDismissText("Fechar")
-
-		// Show the save dialog.
 		saveDialog.Show()
 		return
 	}
@@ -524,12 +604,9 @@ func downloadPdf(url string, nome string, win fyne.Window) {
 
 	}, win)
 
-	// Set the default file name for the save dialog.
 	saveDialog.SetFileName(nome + ".pdf")
 	saveDialog.SetFilter(&storage.ExtensionFileFilter{Extensions: []string{".pdf"}})
 	saveDialog.SetConfirmText("Salvar")
 	saveDialog.SetDismissText("Fechar")
-
-	// Show the save dialog.
 	saveDialog.Show()
 }

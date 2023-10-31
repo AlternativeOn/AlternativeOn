@@ -10,7 +10,7 @@ import (
 //go:embed assets/Icon.png
 var windowIcon []byte
 
-//go:embed assets/lock_reset.svg
+//go:embed assets/icons/lock_reset.svg
 var lockReset []byte
 var lockResetIconResource = fyne.NewStaticResource("Reset lock icon", lockReset)
 var lockResetIcon = theme.NewThemedResource(lockResetIconResource)
@@ -26,7 +26,7 @@ Atualmente é possivel:
 - Ver o nome e escola
 
 Ainda não foi adicionado a possibilidade de mudança de senha pois o servidor está retonando o erro 500 para todas as mudanças de senha.`
-var textoTabSobre = `## Alternative On - v1.0.0-RC3
+var textoTabSobre = `## Alternative On - v1.0.0
 
 Alternative On é um projeto que visa ser um cliente alternativo a plataforma de estudos Positivo On, contendo aplicativos próprios para Android, Linux e Windows.
 
@@ -57,3 +57,5 @@ Caso tenha esquecido sua senha, clique no botão "Recuperar senha".`
 var textoPainelSessão = "Essa opção faz com que suas credenciais sejam salvadas para que na proxima vez que abrir o app não ser necessário inserir suas credenciais novamente"
 
 var textoLivrosAjuda = "Baixe os seus livros digitais por aqui!\n-Baixar qualquer livro manualmente NÃO tera a senha removida automaticamente;\n\n-Baixar todos os livros remove a senha automaticamente;\n\n-A senha será copiada para a área de transferencia ao baixar manualmente."
+
+var textoInterfaceBaixarTudo = "Primeiro selecione uma pasta para baixar os livros, depois clique em iniciar."
