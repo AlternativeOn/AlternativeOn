@@ -22,3 +22,4 @@ winres/
 *.bat
 fyne_metadata_init.go
 *.keystore
+*.crt

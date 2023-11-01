@@ -1,4 +1,4 @@
-// Versão: 1.0.0
+// Versão: 1.0.1
 package main
 
 import (
@@ -43,6 +43,12 @@ func main() {
 		Release: true,
 	}
 	app.SetMetadata(alternativeOnMetadata)
+	alternativeOnWindow.CenterOnScreen()
+
+	//Configurações - Tema do app
+	if alternativeOnApp.Preferences().Bool("theme") {
+		alternativeOnApp.Settings().SetTheme(theme.DarkTheme())
+	}
 
 	//Sessão do usuário - Verificação nas configurações
 	if alternativeOnApp.Preferences().String("config_session") == "" {
@@ -84,7 +90,7 @@ func main() {
 	loginPainelEntrada := container.NewVBox(loginPainelTextoAjuda, loginPainelLoginUsuarioTexto, loginPainelLoginUsuario, loginPainelLoginSenhaTexto, loginPainelLoginSenha)
 
 	//Botão de Recuperar senha
-	loginPainelBtnEsqueciSenha := widget.NewButtonWithIcon("Recuperar senha", lockResetIcon, func() { recuperarSenha(alternativeOnWindow) })
+	loginPainelBtnEsqueciSenha := widget.NewButtonWithIcon("Recuperar senha", theme.NewThemedResource(resourceLockresetSvg), func() { recuperarSenha(alternativeOnWindow) })
 	loginPainelBtnEsqueciSenha.Importance = widget.MediumImportance
 	loginPainelBtnEnviar := widget.NewButtonWithIcon("Entrar", theme.LoginIcon(), func() {
 		if loginPainelLoginUsuario.Text == "" || loginPainelLoginSenha.Text == "" {
@@ -162,8 +168,10 @@ func main() {
 }
 
 func interfacePrincipal(janela fyne.Window, app fyne.App) {
+	janela.SetTitle("Alternative On")
 	janela.Resize(fyne.NewSize(800, 600))
 	janela.CenterOnScreen()
+	janela.SetPadded(true)
 
 	links := pgo.ObterRecursos(TokenData.IdEscola, TokenData.Token, TokenData.TokenParceiro)
 
@@ -224,7 +232,7 @@ func interfacePrincipal(janela fyne.Window, app fyne.App) {
 	)
 
 	labelAccordionMensagens := widget.Label{
-		Text: "Leia as mensagens enviadas a você.",
+		Text: "Veja as mensagens enviadas a você.",
 	}
 	botaoAccordionMensagens := widget.Button{
 		Text:       "Ler mensagens",
@@ -261,13 +269,11 @@ func interfacePrincipal(janela fyne.Window, app fyne.App) {
 	/* Tab 2: Conta do usuário */
 	labelTabContaPrincipal := widget.NewRichTextFromMarkdown(textoTabConta)
 	labelTabContaPrincipal.Wrapping = fyne.TextWrapWord
-	labelTabContaNomeUsuario := widget.NewLabel(fmt.Sprintf("Olá, %v!\n(ID: %v, ID legado: %v)", TokenDataPrimitivo.Nome, TokenData.IdUsuario, TokenDataPrimitivo.IdUsuarioEscola)) //TODO: Implementar userinfo no pgo
+	labelTabContaNomeUsuario := widget.NewLabel(fmt.Sprintf("👋 Bem-vindo, %v, da escola %v!\n(ID Usuário: %v, ID Escola: %v)", TokenDataPrimitivo.Nome, TokenData.NomeEscola, TokenData.IdUsuario, TokenData.IdEscola))
 	labelTabContaNomeUsuario.Wrapping = fyne.TextWrapWord
-	labelTabContaNomeEscola := widget.NewLabel("Escola: " + TokenData.NomeEscola + " (ID: " + TokenData.IdEscola + ")")
-	labelTabContaNomeEscola.Wrapping = fyne.TextWrapWord
 	botaoTabContaMudarSenha := widget.Button{
 		Text:       "Mudar senha",
-		Icon:       lockResetIcon,
+		Icon:       theme.NewThemedResource(resourceLockresetSvg),
 		Importance: widget.HighImportance,
 		OnTapped: func() {
 			mudarSenhaAntigaLabel := widget.NewLabelWithStyle("Digite a antiga senha:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
@@ -296,14 +302,14 @@ func interfacePrincipal(janela fyne.Window, app fyne.App) {
 		},
 	}
 
-	labelSessãoStatus := widget.NewLabel("Sua sessão **não** está sendo salva para o usuário atual.")
+	labelSessãoStatus := widget.NewRichTextFromMarkdown("Sua sessão **não** está sendo salva para o usuário atual.")
 	labelSessãoStatus.Wrapping = fyne.TextWrapWord
 	if strings.Contains(app.Preferences().String("config_session"), "yes") {
-		labelSessãoStatus.Text = "Sua sessão **está** sendo salva para o usuário atual."
+		labelSessãoStatus.ParseMarkdown("Sua sessão **está** sendo salva para o usuário atual.")
 		labelSessãoStatus.Refresh()
 	}
 
-	conteudoTabConta := container.New(layout.NewVBoxLayout(), labelTabContaPrincipal, labelTabContaNomeUsuario, labelTabContaNomeEscola, labelSessãoStatus, &botaoTabContaMudarSenha)
+	conteudoTabConta := container.New(layout.NewVBoxLayout(), labelTabContaPrincipal, labelTabContaNomeUsuario, labelSessãoStatus, &botaoTabContaMudarSenha)
 	/* Tab 2: Conta do usuário */
 
 	/* Tab 3: Sobre */
@@ -311,28 +317,48 @@ func interfacePrincipal(janela fyne.Window, app fyne.App) {
 	labelTabSobre.Wrapping = fyne.TextWrapWord
 	botaoTabSobreGH := widget.Button{
 		Text:       "Ir para a página do projeto",
-		Icon:       theme.ComputerIcon(),
+		Icon:       theme.NewThemedResource(resourceOpeninbrowserSvg),
 		OnTapped:   func() { app.OpenURL(parseUrl("https://github.com/AlternativeOn/AlternativeOn")) },
-		Importance: widget.HighImportance,
+		Importance: widget.MediumImportance,
 	}
 	botaoTabSobreConfig := widget.Button{
 		Text:       "Configurações do app",
 		Icon:       theme.SettingsIcon(),
-		Importance: widget.MediumImportance,
+		Importance: widget.HighImportance,
 	}
 	botaoTabSobreConfig.OnTapped = func() {
 		btnMudarTemaClaro := widget.NewButtonWithIcon("Tema claro", theme.NewInvertedThemedResource(resourceLightmodeSvg), func() {
 			app.Settings().SetTheme(theme.LightTheme())
+			app.Preferences().SetBool("theme", false)
 		})
 		btnMudarTemaClaro.Importance = widget.HighImportance
 		btnMudarTemaEscuro := widget.NewButtonWithIcon("Tema escuro", theme.NewInvertedThemedResource(resourceDarkmodeSvg), func() {
 			app.Settings().SetTheme(theme.DarkTheme())
+			app.Preferences().SetBool("theme", true)
 		})
 		btnMudarTemaEscuro.Importance = widget.HighImportance
-		lblConfigApp := widget.NewLabel("Aqui você pode trocar o tema do aplicativo")
+		lblConfigApp := widget.NewRichTextFromMarkdown("- Tema\nEscolha um tema para o aplicativo.")
 		lblConfigApp.Wrapping = fyne.TextWrapWord
-		containerAppSettings := container.NewVBox(btnMudarTemaClaro, btnMudarTemaEscuro, lblConfigApp)
-		temaApp := dialog.NewCustom("Configurações do aplicativo", "Fechar", containerAppSettings, janela)
+
+		/*btnMudarCor := widget.NewButtonWithIcon("Mudar cor", theme.ColorPaletteIcon(), func() {
+			cor := dialog.NewColorPicker("Escolha uma cor", "Essa cor será o tema do aplicativo", func(c color.Color) {
+				c = theme.PrimaryColor()
+
+				fmt.Println(c)
+			}, janela)
+			cor.Show()
+
+		})
+		lblMudarCor := widget.NewRichTextFromMarkdown("- Cor\nEscolha uma cor para o app (padrão: azul)")
+		lblMudarCor.Wrapping = fyne.TextWrapWord*/
+
+		containerAppSettings := container.NewVBox(lblConfigApp, btnMudarTemaClaro, btnMudarTemaEscuro, widget.NewSeparator() /*lblMudarCor, btnMudarCor, widget.NewSeparator()*/)
+		temaApp := dialog.NewCustom("Configurações do aplicativo", "Salvar", containerAppSettings, janela)
+		btnFecharConfig := widget.NewButtonWithIcon("Salvar", theme.DocumentSaveIcon(), func() {
+			temaApp.Hide()
+		})
+		btnFecharConfig.Importance = widget.SuccessImportance
+		temaApp.SetButtons([]fyne.CanvasObject{btnFecharConfig})
 		temaApp.Show()
 	}
 
