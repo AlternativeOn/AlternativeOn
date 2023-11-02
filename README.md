@@ -9,9 +9,11 @@
   
 |    **Baixe Aqui**    |               **Plataforma**              |
 |:-----------------:|:----------------------------------------:|
-| ![GitHub release (by tag)](https://img.shields.io/github/downloads/alternativeon/alternativeon/latest/total?style=for-the-badge&logo=windows10&logoColor=blue&label=Baixar%20-%20Windows&color=success&link=https%3A%2F%2Fgithub.com%2FAlternativeOn%2FAlternativeOn%2Freleases%2Fdownload%2Fv1.0.0%2FAlternative_On.exe) | Windows |
-| ![GitHub release (by tag)](https://img.shields.io/github/downloads/alternativeon/alternativeon/latest/total?style=for-the-badge&logo=android&logoColor=green&label=Baixar%20-%20Windows&color=success&link=https%3A%2F%2Fgithub.com%2FAlternativeOn%2FAlternativeOn%2Freleases%2Fdownload%2Fv1.0.0%2FAlternative_On.apk) |  Android  |
+| <a href="https://github.com/alternativeon/alternativeon/releases/latest"> <img src="https://img.shields.io/github/downloads/alternativeon/alternativeon/latest/total?style=for-the-badge&logo=windows10&logoColor=blue&label=Baixar%20-%20Windows&color=success&link=https%3A%2F%2Fgithub.com%2FAlternativeOn%2FAlternativeOn%2Freleases%2Fdownload%2Fv1.0.0%2FAlternative_On.exe"> </a> | Windows |
+| <a href="https://github.com/alternativeon/alternativeon/releases/latest"> <img src="https://img.shields.io/github/downloads/alternativeon/alternativeon/latest/total?style=for-the-badge&logo=android&logoColor=green&label=Baixar%20-%20Windows&color=success&link=https%3A%2F%2Fgithub.com%2FAlternativeOn%2FAlternativeOn%2Freleases%2Fdownload%2Fv1.0.0%2FAlternative_On.apk"> </a> |  Android  |
+<a href="./iOS.md"> <img src="https://img.shields.io/github/downloads/alternativeon/alternativeon/latest/total?style=for-the-badge&logo=apple&label=Baixar%20-%20iOS&color=success&link=https%3A%2F%2Fgithub.com%2FAlternativeOn%2FAlternativeOn%2Freleases%2Fdownload%2Fv1.0.1%2FAlternativeOn.ipa"> </a> | iOS/iPhone/iPad | 
 
+_Clique nas imagens para baixar!_
 </div>
 
 
