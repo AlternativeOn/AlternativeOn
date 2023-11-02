@@ -80,6 +80,8 @@ Vá em "My apps", e depois clique no "+", e procure pelo arquivo que você baixo
 
 https://github.com/AlternativeOn/AlternativeOn/assets/47502554/e12d8ca0-08b7-482c-902c-58181e98f721
 
+Pela última vez, será necessário o seu Apple ID, para que o aplicativo possa ser instalado.
+
 https://github.com/AlternativeOn/AlternativeOn/assets/47502554/21853db7-8bb9-44f3-a77c-80afb3aea15c
 
-
+E após alguns segundos, o app será instalado e irá aparecer na sua tela inicial, como no vídeo acima.
