@@ -1,3 +1,11 @@
+---
+# Atenção: O aplicativo não funciona mais, e não irei trazer mais atualizações para ele. O código foi arquivado por questões de preservação de software.
+
+Tive um bom tempo aprendendo enquanto desenvolvia um cliente para o site da escola, espero ter mais oportunidades assim no futuro :)
+
+- Rebecca, 06/01/2023
+---
+
 <h1 align="center">
 <a href="https://github.com/alternativeon/alternativeon/releases/latest">AlternativeOn</a>
 </h1>
